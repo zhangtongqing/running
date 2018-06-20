@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.version.dao.VersionDao">
+
+	<resultMap type="com.peipao.qdl.version.model.Version" id="version">
+		<id property="versionId" column="version_id" /><!--主键ID-->
+        <result property="versionCode" column="version_code" /><!--版本号-->
+        <result property="versionCodeMin" column="version_code_min" /><!--可以正常支持的最小app版本号-->
+        <result property="clientType" column="client_type" /><!--客户端类型,值见枚举 ClientType-->
+        <result property="appType" column="app_type" /><!--app类型,枚举AppTypeEnum，0=学生端；1=老师端-->
+        <result property="updateType" column="update_type" /><!--更新类型（0=所有版本无条件提示更新，1=所有版本无条件强制更新，2=所有版本有条件提示更新，3=所有版本有条件强制更新）-->
+        <result property="downloadUrl" column="download_url" /><!--app安装包下载地址(安卓端使用)-->
+        <result property="constraintUpdateCodes" column="constraint_update_codes" /><!--需要强制更新的额外的版本号信息-->
+        <result property="tipUpdateCodes" column="tip_update_codes" /><!--需要强制更新的额外的版本号信息-->
+        <result property="updateContent" column="update_content" /><!--更新说明-->
+        <result property="createTime" column="create_time" /><!--信息新建时间-->
+        <result property="updateTime" column="update_time" /><!--信息修改时间-->
+        <result property="createUserId" column="create_user_id" /><!--新建信息的用户ID-->
+        <result property="updateUserId" column="update_user_id" /><!--修改信息的用户ID-->
+	</resultMap>
+
+	<select id="getMaxVersionByClient" resultMap="version">
+        SELECT * FROM running.`t_version` where version_id = (SELECT MAX(t.version_id) as vid FROM `t_version` t where t.client_type=#{clientType} and t.app_type=#{appType})
+	</select>
+
+    <select id="getVersionById" resultMap="version">
+        SELECT * FROM running.`t_version` where version_id = #{versionId}
+	</select>
+
+    <select id="getVersionList" resultType="java.util.Map">
+        SELECT
+            @key:=version_id as `key`,
+            version_id as versionId,
+            version_code as versionCode,
+            client_type as clientType,
+            app_type as appType,
+            update_type as updateType,
+            create_time as createTime
+        FROM `t_version`
+        WHERE 1=1
+        <if test="clientType != null" >
+            and client_type=#{clientType}
+        </if>
+        <if test="appType != null" >
+            and app_type=#{appType}
+        </if>
+        ORDER BY version_id desc
+    </select>
+
+    <!--插入一条版本控制信息-->
+    <insert id="insertVersion" useGeneratedKeys="true" keyProperty="version.versionId" parameterType="com.peipao.qdl.version.model.Version">
+        insert into running.t_version(
+            <if test="version.versionCode != null" >
+                version_code,
+            </if>
+            <if test="version.versionCodeMin != null" >
+                version_code_min,
+            </if>
+            <if test="version.updateType != null" >
+                update_type,
+            </if>
+            <if test="version.clientType != null" >
+                client_type,
+            </if>
+            <if test="version.appType != null" >
+                app_type,
+            </if>
+            <if test="version.downloadUrl != null and version.downloadUrl != ''" >
+                download_url,
+            </if>
+            <if test="version.constraintUpdateCodes != null and version.constraintUpdateCodes != ''" >
+                constraint_update_codes,
+            </if>
+            <if test="version.tipUpdateCodes != null and version.tipUpdateCodes != ''" >
+                tip_update_codes,
+            </if>
+            <if test="version.updateContent != null and version.updateContent != ''" >
+                update_content,
+            </if>
+            create_time,
+            create_user_id
+        )
+        values (
+            <if test="version.versionCode != null" >
+                #{version.versionCode},
+            </if>
+            <if test="version.versionCodeMin != null" >
+                #{version.versionCodeMin},
+            </if>
+            <if test="version.updateType != null" >
+                #{version.updateType},
+            </if>
+            <if test="version.clientType != null" >
+                #{version.clientType},
+            </if>
+            <if test="version.appType != null" >
+                #{version.appType},
+            </if>
+            <if test="version.downloadUrl != null and version.downloadUrl != ''" >
+                #{version.downloadUrl},
+            </if>
+            <if test="version.constraintUpdateCodes != null and version.constraintUpdateCodes != ''" >
+                #{version.constraintUpdateCodes},
+            </if>
+            <if test="version.tipUpdateCodes != null and version.tipUpdateCodes != ''" >
+                #{version.tipUpdateCodes},
+            </if>
+            <if test="version.updateContent != null and version.updateContent != ''" >
+                #{version.updateContent},
+            </if>
+           #{version.createTime},
+           #{version.createUserId}
+        );
+    </insert>
+
+    <update id="updateVersion" parameterType="com.peipao.qdl.version.model.Version">
+        update running.t_version
+        <set>
+            <if test="version.versionCode != null" >
+                version_code = #{version.versionCode},
+            </if>
+            <if test="version.versionCodeMin != null" >
+                version_code_min = #{version.versionCodeMin},
+            </if>
+            <if test="version.updateType != null" >
+                update_type = #{version.updateType},
+            </if>
+            <if test="version.clientType != null" >
+                client_type = #{version.clientType},
+            </if>
+            <if test="version.appType != null" >
+                app_type = #{version.appType},
+            </if>
+            download_url = #{version.downloadUrl},
+            constraint_update_codes = #{version.constraintUpdateCodes},
+            tip_update_codes = #{version.tipUpdateCodes},
+            update_content = #{version.updateContent},
+            update_time = #{version.updateTime},
+            update_user_id = #{version.updateUserId},
+        </set>
+        where version_id = #{version.versionId}
+    </update>
+
+</mapper>
+

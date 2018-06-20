@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.runningrule.dao.RailNodeDao">
+	<resultMap type="com.peipao.qdl.runningrule.model.RailNode" id="railNode">
+		<id property="nodeId" column="node_id" /><!--主键ID-->
+		<result property="semesterId" column="semester_id" /><!--学期ID-->
+		<result property="latitude" column="latitude" /><!--纬度值-->
+		<result property="longitude" column="longitude" /><!--经度值-->
+		<result property="type" column="type" /><!-- 默认 围栏=1 晨练打卡数据点=2 -->
+	</resultMap>
+
+	<resultMap type="com.peipao.qdl.runningrule.model.vo.RailNodeVo" id="railNodeVo">
+		<result property="latitude" column="latitude" /><!--纬度值-->
+		<result property="longitude" column="longitude" /><!--经度值-->
+	</resultMap>
+
+	<select id="getRailNodeListBySemesterId" resultMap="railNodeVo">
+		SELECT latitude, longitude FROM running.t_rail_node WHERE semester_id = #{semesterId} and type = #{type}
+	</select>
+
+	<select id="getRailNodeListBySemesterIdAndRailName" resultMap="railNodeVo">
+		SELECT latitude, longitude FROM running.t_rail_node WHERE
+		semester_id = #{semesterId}
+		and type = #{type}
+		<if test="railName != null">
+			and rail_name = #{railName}
+		</if>
+		<if test="railName == null">
+			and rail_name is #{railName}
+		</if>
+	</select>
+
+	<select id="getRailNodeListByRailName" resultType="map">
+		SELECT t.node_id, t.rail_name FROM t_rail_node t WHERE semester_id = #{semesterId} and type = #{type}	GROUP BY t.rail_name
+	</select>
+
+	<select id="searchRailByName" resultType="map">
+		SELECT
+			t.node_id,
+			t.rail_name
+		FROM
+			t_rail_node t
+		WHERE
+			semester_id = #{semesterId}
+		and type = #{type}
+		and t.rail_name = #{railName}
+		GROUP BY t.rail_name
+	</select>
+
+	<insert id="insertRailNodeByList" useGeneratedKeys="true" keyColumn="node_id">
+		insert into running.t_rail_node(
+			semester_id, latitude, longitude, type
+		)values
+			<foreach collection="railNodeList" item="railNode" index="index" separator=",">
+				( #{semesterId}, #{railNode.latitude}, #{railNode.longitude}, #{railNode.type} )
+			</foreach>
+	</insert>
+
+
+	<insert id="insertRailNodesByName" useGeneratedKeys="true" keyColumn="node_id">
+		insert into running.t_rail_node(
+		semester_id, latitude, longitude, type, rail_name
+		)values
+		<foreach collection="railNodeList" item="railNode" index="index" separator=",">
+			( #{semesterId}, #{railNode.latitude}, #{railNode.longitude}, #{railNode.type},#{railName} )
+		</foreach>
+	</insert>
+
+
+	<delete id="deleteRailNodeBySemesterId">
+		delete from running.t_rail_node where semester_id = #{semesterId} and type=#{type}
+	</delete>
+
+	<delete id="deleteRailNodeBySemesterIdAndRailName">
+		delete from running.t_rail_node where semester_id = #{semesterId} and type=#{type} and rail_name = #{railName}
+	</delete>
+</mapper>

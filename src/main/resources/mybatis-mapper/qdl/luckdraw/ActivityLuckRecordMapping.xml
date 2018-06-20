@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.luckdraw.dao.ActivityLuckRecordDao">
+
+	<resultMap type="com.peipao.qdl.luckdraw.model.ActivityLuckRecord" id="activityLuckRecord">
+        <id     property="recordId"        column="record_id" />        <!--主键ID-->
+        <result property="userId"          column="user_id" />          <!--抽奖用户ID-->
+        <result property="activityId"      column="activity_id" />      <!--活动主键ID-->
+        <result property="runningRecordId" column="running_record_id" /><!--跑步记录主键ID-->
+        <result property="isLuck"          column="is_luck" />          <!--是否中奖(0=没有  1=中奖)-->
+        <result property="prizeId"         column="prize_id" />         <!--奖品id-->
+        <result property="prizeCode"       column="prize_code" />       <!--兑奖码-->
+        <result property="createTime"      column="create_time" />      <!--抽奖时间-->
+    </resultMap>
+
+    <select id="getLuckRecordByActivity" resultMap="activityLuckRecord">
+        SELECT * FROM running.t_activity_luck_record WHERE user_id=#{userId} AND activity_id=#{activityId} AND running_record_id=#{runningRecordId} LIMIT 1
+    </select>
+
+    <select id="getLuckCountByUser" resultType="int">
+        SELECT count(*) FROM running.t_activity_luck_record WHERE user_id=#{userId} AND activity_id=#{activityId}
+        <if test="isLuck != null">
+            AND is_luck=#{isLuck}
+        </if>
+        <if test="startTime != null and endTime != null">
+            AND create_time BETWEEN #{startTime} AND #{endTime}
+        </if>
+    </select>
+
+    <select id="getPrizeCountByUser" resultType="int">
+        SELECT count(*) FROM running.t_activity_luck_record WHERE user_id=#{userId} AND activity_id=#{activityId} AND is_luck=#{isLuck}
+        AND prize_id=#{prizeId}
+    </select>
+
+    <select id="getActivityIdsByUserId" resultType="map">
+        SELECT t.*,y.`name` from (
+          SELECT DISTINCT(t.activity_id) as activityId from running.t_activity_luck_record t where t.user_id=#{userId} and t.is_luck=#{isLuck}
+        ) t LEFT JOIN t_activity y on t.activityId=y.activity_id
+        ORDER BY y.activity_id
+    </select>
+
+    <select id="myLuckRecord" resultType="map">
+        SELECT
+            p.prize_title as prizeTitle,p.prize_img as prizeImg,
+            DATE_FORMAT(t.create_time, '%Y-%m-%d %H:%i:%S') as createTime,
+            t.prize_code as prizeCode,t.running_record_id as runningRecordId,
+        (SELECT  t2.name from t_activity t2 where t2.activity_id = #{activityId}) as activityName
+        FROM running.t_activity_luck_record t
+        LEFT JOIN running.t_activity_prize p on t.prize_id=p.prize_id
+        WHERE t.activity_id=#{activityId}
+        AND t.user_id=#{userId}
+        AND t.is_luck=#{isLuck}
+        <if test="runningRecordId != null">
+            AND t.running_record_id = #{runningRecordId}
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+    <select id="getPrizeIdsByActivityId" resultType="map">
+        SELECT t.prizeId, p.prize_title as prizeTitle from (
+        SELECT DISTINCT(t.prize_id) as prizeId from running.t_activity_luck_record t where t.activity_id=#{activityId} and t.is_luck=#{isLuck}
+        ) t LEFT JOIN running.t_activity_prize p on t.prizeId=p.prize_id
+        ORDER BY p.prize_weight
+    </select>
+
+    <select id="activityLuckRecord" resultType="map">
+        SELECT
+            u.username,
+            insert(u.mobile, 4, 4, '****') as mobile,
+            DATE_FORMAT(t.create_time, '%Y-%m-%d %H:%i:%S') as createTime
+        FROM running.t_activity_luck_record t
+        LEFT JOIN running.t_user u on t.user_id=u.user_id
+        WHERE t.activity_id=#{activityId}
+        AND t.is_luck=#{isLuck}
+        AND t.prize_id=#{prizeId}
+        ORDER BY t.record_id DESC
+    </select>
+
+
+    <insert id="insertActivityLuckRecord" parameterType="com.peipao.qdl.luckdraw.model.ActivityLuckRecord"  useGeneratedKeys="true">
+        INSERT INTO running.t_activity_luck_record(
+            user_id, activity_id, running_record_id, is_luck, prize_id, prize_code, create_time
+        )
+        VALUES (
+            #{activityLuckRecord.userId},
+            #{activityLuckRecord.activityId},
+            #{activityLuckRecord.runningRecordId},
+            #{activityLuckRecord.isLuck},
+            #{activityLuckRecord.prizeId},
+            #{activityLuckRecord.prizeCode},
+            #{activityLuckRecord.createTime}
+        )
+    </insert>
+
+    <select id="getLuckRecordForPC" resultType="map">
+        select t1.record_id recordId, t2.username, t2.mobile, t3.name, t4.prize_title prizeTitle, t1.create_time createTime, t1.running_record_id runningRecordId, prize_code prizeCode
+        from running.t_activity_luck_record t1
+        LEFT JOIN running.t_user t2 on t1.user_id = t2.user_id
+        LEFT JOIN running.t_school t3 ON t2.school_id = t3.school_id
+        LEFT JOIN running.t_activity_prize t4 on t4.prize_id = t1.prize_id
+        WHERE 1=1
+        <if test="activityId != null">
+            AND t1.activity_id = #{activityId}
+        </if>
+        <if test="mobile != null and mobile !=''">
+            AND t2.mobile LIKE CONCAT('%',${mobile},'%')
+        </if>
+        <if test="isLuck != null ">
+            AND t1.is_luck = #{isLuck}
+        </if>
+        <if test="orderkey != null and orderkey == 'name'.toString()">
+            ORDER BY t3.name ${sort}
+        </if>
+        <if test="orderkey != null and orderkey == 'prizeTitle'.toString()">
+            ORDER BY t4.prize_title ${sort}
+        </if>
+        <if test="orderkey != null and orderkey == 'createTime'.toString()">
+            ORDER BY t1.create_time ${sort}
+        </if>
+        <if test="from != null">
+            Limit #{from}, #{num}
+        </if>
+
+    </select>
+
+    <select id="countLuckRecordForPC" resultType="Long">
+        select count(*) from running.t_activity_luck_record t1
+        <if test="mobile != null and mobile !=''">
+            LEFT JOIN running.t_user t2 on t1.user_id = t2.user_id
+        </if>
+        WHERE 1=1
+        <if test="activityId != null">
+            AND t1.activity_id = #{activityId}
+        </if>
+        <if test="mobile != null and mobile !=''">
+            AND t2.mobile LIKE CONCAT('%',${mobile},'%')
+        </if>
+        <if test="isLuck != null ">
+            AND t1.is_luck = #{isLuck}
+        </if>
+        and t1.is_luck = 1
+    </select>
+
+    <select id="getPrizeCountByPrizeId" resultType="int">
+        SELECT count(*) FROM running.t_activity_luck_record WHERE prize_id = #{prizeId}
+    </select>
+
+</mapper>

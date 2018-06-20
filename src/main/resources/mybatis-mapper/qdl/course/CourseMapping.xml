@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.course.dao.CourseDao">
+
+
+
+	<resultMap type="com.peipao.qdl.course.model.Course" id="course">
+		<result property="courseId" column="course_id" />
+		<result property="name" column="name" />
+		<result property="schoolId" column="school_id" />
+		<result property="semesterId" column="semester_id" />
+		<result property="userId" column="user_id" />
+		<result property="createTime" column="create_time" />
+		<result property="desc" column="desc" />
+		<result property="username" column="username" />
+		<result property="latitude" column="latitude" />
+		<result property="longitude" column="longitude" />
+		<result property="needSignLocation" column="need_sign_location" />
+		<result property="maxCapacity" column="max_capacity" />
+		<result property="signIntevalTime" column="sign_inteval_time" />
+
+	</resultMap>
+
+
+	<resultMap type="com.peipao.qdl.course.model.CourseSchedule" id="courseSchedule">
+		<id property="courseScheduleId" column="course_schedule_id" />
+		<result property="courseId" column="course_id" />
+		<result property="weekIndex" column="week_index" />
+		<result property="date" column="date" />
+		<result property="time" column="time" />
+		<result property="duration" column="duration" />
+		<result property="courseIndex" column="course_index" />
+		<result property="name" column="name" />
+		<result property="signCount" column="sign_count" />
+		<result property="descId" column="desc" />
+	</resultMap>
+
+	<resultMap type="com.peipao.qdl.course.model.CourseMember" id="courseMember">
+		<id property="courseMemberId" column="course_member_id" />
+		<result property="courseScheduleId" column="course_schedule_id" />
+		<result property="courseId" column="course_id" />
+		<result property="userId" column="user_id" />
+		<result property="signTime" column="sign_time" />
+		<result property="latitude" column="latitude" />
+		<result property="longitude" column="longitude" />
+		<result property="username" column="username" />
+		<result property="sex" column="sex" />
+		<result property="imageURL" column="image_url" />
+	</resultMap>
+
+	<select id="getSelectCourseList" resultType="map">
+		SELECT t1.name, t1.course_id courseId, t1.max_capacity as maxCapacity,t2.username, t3.week_start weekStart, t3.week_end weekEnd, t3.weekday, t3.time FROM running.t_course t1
+		LEFT JOIN running.t_user  t2 ON t1.user_id = t2.user_id AND t2.status = 1
+        LEFT JOIN running.t_course_schedule_desc t3 on t1.course_id = t3.course_id
+		WHERE
+        <if test="semesterId != null">
+            t1.semester_id = #{semesterId}
+        </if>
+        <if test="courseId != null">
+            t1.course_id = #{courseId}
+        </if>
+		<if test="value != null and value != ''">
+			AND ( t1.name like concat('%', #{value}, '%') OR t2.username like concat('%', #{value}, '%'))
+		</if>
+        AND t1.status = 1 and t1.user_id is not null
+		<if test="courseArray != null and courseArray != ''">
+			AND t1.course_id in (${courseArray})
+		</if>
+		order by t1.course_id
+	</select>
+
+	<select id="queryCourseScheduleListWithName" resultType="map">
+		select t1.course_schedule_id AS courseScheduleId, t1.date, t1.time, t2.name, t4.username from running.t_course_schedule t1
+		LEFT JOIN running.t_course t2 ON t1.course_id = t2.course_id and t2.status = 1 and t2.semester_id=#{semesterId}
+		LEFT JOIN running.t_user  t4 ON t4.user_id = t2.user_id and t4.status = 1 and t4.school_id=#{schoolId}
+		WHERE  t1.status = 1
+		<if test="courseId != null">
+			AND t1.course_id = #{courseId}
+		</if>
+		<if test="courseArray != null and courseArray != ''">
+			AND t1.course_id in (${courseArray})
+		</if>
+		<if test="weekIndex != null">
+			AND t1.week_index = #{weekIndex}
+		</if>
+		ORDER BY t1.date
+	</select>
+
+	<select id="queryCourseScheduleById" resultMap="courseSchedule">
+		select *
+		from running.t_course_schedule WHERE course_schedule_id = #{courseScheduleId} AND status = 1
+	</select>
+
+	<insert id="insertCourseMember">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="courseMemberId">
+			SELECT last_insert_id() AS courseMemberId
+		</selectKey>
+		insert into running.t_course_member(course_schedule_id, course_id, user_id, latitude, longitude, sign_type, sign_time)
+		values (#{courseScheduleId}, #{courseId},#{userId}, #{latitude}, #{longitude}, #{signType}, now());
+	</insert>
+
+	<update id="updateCourseMember">
+		update running.t_course_member
+		<set>
+			<if test="courseScheduleId != null">
+				course_schedule_id = #{courseScheduleId},
+			</if>
+			<if test="signTime != null">
+				sign_time = #{signTime},
+			</if>
+			<if test="isEffective != null">
+				is_effective = #{isEffective},
+			</if>
+			<if test="latitude != null">
+				latitude = #{latitude},
+			</if>
+			<if test="longitude != null">
+				longitude = #{longitude},
+			</if>
+			<if test="signType != null">
+				sign_type = #{signType},
+			</if>
+		</set>
+		WHERE course_member_id = #{courseMemberId}
+	</update>
+
+	<update id="updateCourseScheduleSomeCount">
+		update running.t_course_schedule
+		<set>
+			<if test="signcount != null">
+				sign_count = sign_count + #{signcount},
+			</if>
+		</set>
+		where course_schedule_id = #{courseScheduleId}
+	</update>
+
+	<select id="queryCourseById" resultMap="course">
+		select *
+		from running.t_course
+		WHERE course_id = #{courseId} AND status = 1
+	</select>
+
+	<select id="queryCourseMemberByUserId" resultMap="courseMember">
+		select *
+		from running.t_course_member
+		WHERE user_id = #{userId} AND course_schedule_id = #{courseScheduleId}
+	</select>
+
+	<select id="checkHaveSign" resultType="java.lang.Integer">
+		SELECT count(*) FROM running.t_course_member
+		WHERE course_schedule_id = #{courseScheduleId} AND user_id = #{userId}
+	</select>
+	
+	<select id="queryCourseListForWeb" resultType="map">
+		select t1.course_id `key`, t1.course_id courseId, t1.name, t2.username from running.t_course t1
+		LEFT JOIN running.t_user t2 ON t2.user_id = t1.user_id and t2.status = 1
+	  	WHERE t1.status = 1 AND t1.semester_id = #{semesterId}
+		<if test="userId != null">
+			AND t1.user_id = #{userId}
+		</if>
+		ORDER BY t1.course_id DESC
+	</select>
+
+	<select id="queryCourseMemberListWeb" resultType="map">
+		SELECT t1.course_member_id courseMemberId, t3.user_id AS userId, t3.student_no AS studentNO, t3.username, t3.mobile, t1.sign_time signTime, t1.sign_type signType FROM running.t_user t3
+		LEFT JOIN running.t_course_member t1 on t1.user_id = t3.user_id AND t1.course_schedule_id = #{courseScheduleId}
+		WHERE t3.course_id = #{courseId}
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="getCourseScheduleMember" resultType="map">
+		SELECT
+			ifnull(t1.course_member_id, '-1') AS courseMemberId,
+			ifnull(t3.user_id,'') AS userId,
+			ifnull(t3.student_no,'') AS studentNO,
+			ifnull(t3.username, '') as username
+		FROM running.t_user t3
+		LEFT JOIN running.t_course_member t1 on t1.user_id = t3.user_id AND t1.course_schedule_id = #{courseScheduleId}
+		WHERE t3.course_id = #{courseId}
+        <if test="type != null and type==0">
+            AND t1.course_member_id IS NULL
+        </if>
+        <if test="type != null and type==1">
+            AND t1.course_member_id IS NOT NULL
+        </if>
+        <if test="queryType != null and queryType != '' and queryString != null and queryString != ''">
+            AND t3.${queryType} LIKE CONCAT('%',#{queryString},'%')
+        </if>
+	</select>
+
+
+	<select id="getCourseScheduleMemberCount" resultType="java.lang.Integer">
+		SELECT count(*)
+		FROM running.t_user t3
+		LEFT JOIN running.t_course_member t1 on t1.user_id = t3.user_id AND t1.course_schedule_id = #{courseScheduleId}
+		WHERE t3.course_id = #{courseId}
+		<if test="type != null and type==0">
+			AND t1.course_member_id IS NULL
+		</if>
+		<if test="type != null and type==1">
+			AND t1.course_member_id IS NOT NULL
+		</if>
+	</select>
+
+	<select id="queryCourseMemberByIds" resultType="map">
+		SELECT * from (
+		SELECT t1.course_member_id `key` ,t1.user_id AS userId, t3.student_no AS studentNO, t3.username, t3.mobile, t3.sex, t3.classname, t1.sign_time signTime, t1.sign_type signType FROM running.t_course_member t1
+		LEFT JOIN running.t_user t3 ON t3.user_id = t1.user_id AND t3.status = 1
+		WHERE t1.course_schedule_id = #{courseScheduleId} ) t WHERE t.userId in (#{ids})
+	</select>
+
+	<select id="queryCourseMemberListCount" resultType="java.lang.Long">
+		SELECT count(*) FROM running.t_user t1
+		WHERE t1.course_id = #{courseId}
+	</select>
+
+	<insert id="addCourse">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="courseId">
+			SELECT last_insert_id() AS courseId
+		</selectKey>
+		insert into running.t_course (name, school_id, create_time,  user_id, semester_id,  `desc`, max_capacity)
+		values
+		(#{name}, #{schoolId}, #{createTime}, #{userId}, #{semesterId},  #{desc},  #{maxCapacity});
+	</insert>
+	
+	<update id="updateCourse">
+		update running.t_course
+		<set>
+			<if test="name != null and name != ''">
+				`name` = #{name},
+			</if>
+			<if test="userId != null ">
+				user_id = #{userId},
+			</if>
+			<if test="desc != null and desc != '' ">
+				`desc` = #{desc},
+			</if>
+			<if test="needSignLocation != null ">
+				`need_sign_location` = #{needSignLocation},
+			</if>
+			<if test="signIntevalTime != null ">
+				`sign_inteval_time` = #{signIntevalTime},
+			</if>
+			<if test="longitude != null ">
+				`longitude` = #{longitude},
+			</if>
+			<if test="latitude != null ">
+				`latitude` = #{latitude},
+			</if>
+			<if test="maxCapacity != null ">
+				`max_capacity` = #{maxCapacity},
+			</if>
+		</set>
+		WHERE course_id = #{courseId}
+	</update>
+	
+	<delete id="deleteCourse">
+		update running.t_course
+		set status = 0
+		where course_id = #{courseId};
+	</delete>
+
+	<select id="queryCourseListWithMemberCount" resultType="map">
+		select t.name, t.courseId, t.username, ifnull(t.count, 0) AS count, t.userId from(
+		SELECT  t1.name, t1.course_id courseId, t2.username, count(t3.user_id) as count, t2.user_id userId FROM running.t_course t1
+		LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id and t2.status = 1
+		LEFT JOIN running.t_user t3 ON t3.course_id = t1.course_id and t3.status = 1 and t3.user_type = 1
+		WHERE t1.status = 1 AND t1.school_id = #{schoolId}
+		<if test="value != null and value != ''">
+			AND ( t1.name like concat('%', #{value}, '%') OR t2.username like concat('%', #{value}, '%'))
+		</if>
+		<if test="semesterId != null">
+			AND t1.semester_id = #{semesterId}
+		</if>
+		<if test="userId != null">
+			AND t1.user_id = #{userId}
+		</if>
+		<if test="courseId != null">
+			AND t1.course_id = #{courseId}
+		</if>
+		group by t1.course_id)t
+	</select>
+
+	<select id="queryCourseNameAndId" resultType="map">
+		SELECT name, course_id courseId, course_id `key` FROM running.t_course
+		WHERE semester_id = #{semesterId} AND status = 1
+		<if test="userId != null">
+			AND user_id = #{userId}
+		</if>
+		<if test="courseName != null and courseName != ''">
+			AND `name` LIKE CONCAT('%',#{courseName},'%')
+		</if>
+	</select>
+
+	<select id="queryCourseScheduleListBycourseIdForWeb" resultType="map">
+		SELECT t1.course_schedule_id `key`, t1.course_schedule_id courseScheduleId, t1.date, t1.time, t1.course_index courseIndex,
+			t1.sign_count signCount, t1.week_index weekIndex, t2.name FROM running.t_course_schedule t1
+			LEFT JOIN  running.t_course t2 ON t1.course_id = t2.course_id AND t2.status = 1
+		WHERE t1.status = 1
+		<if test="userId != null and userId > 0">
+			AND t2.user_id=#{userId}
+		</if>
+		<if test="courseId != null and courseId > 0">
+			AND t1.course_id = #{courseId}
+		</if>
+		<if test="userId != null and userId > 0">
+			AND t2.user_id=#{userId}
+		</if>
+		ORDER BY t1.course_schedule_id desc LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryCourseScheduleListBycourseIdForWebCount" resultType="java.lang.Long">
+		SELECT COUNT(*) AS allcount
+		FROM running.t_course_schedule t1
+		LEFT JOIN  running.t_course t2 ON t1.course_id = t2.course_id AND t2.status = 1
+		<if test="userId != null and userId > 0">
+			AND t2.user_id=#{userId}
+		</if>
+		WHERE t1.status = 1
+		<if test="courseId != null and courseId > 0">
+			AND t1.course_id = #{courseId}
+		</if>
+		<if test="userId != null and userId > 0">
+			AND t2.user_id=#{userId}
+		</if>
+	</select>
+
+	<select id="queryStudentCourseList" resultType="map">
+		SELECT t2.course_schedule_id courseScheduleId, t2.course_schedule_id `key`, t2.date, t2.time, t2.course_index courseIndex, t2.week_index weekIndex, t2.duration,
+			t1.sign_time signTime, t1.sign_type signType, t3.name FROM running.t_course_member t1
+		LEFT JOIN running.t_course_schedule  t2 ON t1.course_schedule_id = t2.course_schedule_id AND t2.status = 1
+		LEFT JOIN running.t_course t3 on t3.course_id = t2.course_id AND t3.status = 1
+		WHERE t1.user_id = #{userId} AND t3.semester_id = #{semesterId} ORDER BY t1.course_member_id DESC LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryStudentCourseListCount" resultType="java.lang.Long">
+		SELECT count(*) FROM (
+		SELECT t1.* FROM running.t_course_member t1
+		LEFT JOIN running.t_course_schedule t2 ON t1.course_schedule_id = t2.course_schedule_id AND t2.status = 1
+		LEFT JOIN running.t_course  t3 on t3.course_id = t2.course_id AND t3.status = 1
+		WHERE t1.user_id = #{userId} AND t3.semester_id = #{semesterId}) tt
+	</select>
+
+	<delete id="deleteCourseSchedule">
+		UPDATE running.t_course_schedule SET `status` = 0 WHERE course_schedule_id = #{courseScheduleId}
+	</delete>
+
+	<update id="updateCourseSchedule">
+		update running.t_course_schedule
+		<set>
+			<if test="courseId != null">
+				course_id = #{courseId},
+			</if>
+			<if test="weekIndex != null">
+				week_index = #{weekIndex},
+			</if>
+			<if test="date != null and date != ''">
+				date = #{date},
+			</if>
+			<if test="time != null and time != ''">
+				time = #{time},
+			</if>
+			<if test="duration != null">
+				duration = #{duration},
+			</if>
+			<if test="courseIndex != null">
+				course_index = #{courseIndex},
+			</if>
+			<if test="desc != null">
+				`desc` = #{desc},
+			</if>
+		</set>
+		where course_schedule_id = #{courseScheduleId}
+	</update>
+
+	<insert id="insertCourseSchedule">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="courseScheduleId">
+			SELECT last_insert_id() AS courseScheduleId
+		</selectKey>
+		INSERT INTO running.t_course_schedule(course_id, week_index, date, duration, course_index, time, `desc`)
+		VALUES (#{courseId}, #{weekIndex}, #{date}, #{duration}, #{courseIndex}, #{time}, #{descId})
+	</insert>
+
+	<select id="queryEnrollCountAndSignCount" resultType="map">
+		SELECT sign_count signCount FROM running.t_course_schedule WHERE course_schedule_id = #{courseScheduleId} AND status = 1
+	</select>
+
+	<select id="queryCourseScheduleWithTeacherName" resultType="map">
+		SELECT t2.name, t3.username, t1.week_index weekIndex, t1.course_index courseIndex, t1.date, t1.time FROM running.t_course_schedule t1
+		LEFT JOIN  running.t_course  t2 ON t1.course_id = t2.course_id AND t2.status = 1
+		LEFT JOIN  running.t_user  t3 ON t3.user_id = t2.user_id AND t3.status = 1
+		WHERE t1.course_schedule_id = #{courseScheduleId} AND t1.status = 1
+	</select>
+
+	<select id="queryCourseNameByIds" resultType="java.lang.String">
+		SELECT name FROM running.t_course WHERE course_id in (${ids}) AND status = 1
+	</select>
+
+	<select id="queryCourseSumEnrollCountAndSignCount" resultType="map">
+		SELECT sum(t2.sign_count) signcount FROM running.t_course t1
+			LEFT JOIN running.t_course_schedule t2 ON t1.course_id = t2.course_id AND t2.status = 1
+		WHERE t1.course_id = #{courseId} AND t1.status = 1 group by t1.course_id
+	</select>
+
+	<select id="queryCourseMemberById" resultMap="courseMember">
+		select *
+		from running.t_course_member WHERE course_member_id = #{courseMemberId};
+	</select>
+
+    <select id="countCourseByUserId" resultType="java.lang.Integer">
+        SELECT count(*) from t_course t where t.user_id = #{userId}
+    </select>
+
+	<select id="getSchoolIdByCourseId" resultType="Long">
+		SELECT t.school_id
+		FROM running.t_course t
+		WHERE t.status = 1 AND t.course_id = #{courseId}
+	</select>
+
+	<select id="getCourseScheduleBasicInfo" resultType="map">
+		SELECT t1.week_index weekIndex, course_index courseIndex, t1.date, t1.time, t2.name, t3.username, count(t4.user_id) count FROM t_course_schedule t1
+		LEFT JOIN running.t_course t2 on t1.course_id = t2.course_id
+	    LEFT JOIN running.t_user t3 on t3.user_id = t2.user_id
+	    LEFT JOIN running.t_user t4 on t4.course_id = t1.course_id
+		where t1.course_schedule_id = #{courseScheduleId}
+	</select>
+
+	<delete id="deleteCourseMember">
+		DELETE FROM running.t_course_member WHERE course_member_id = #{courseMemberId}
+	</delete>
+
+
+
+	<select id="getCoursescheduleDescList" resultType="map">
+        SELECT
+            t1.name, t1.course_id courseId, t1.max_capacity as maxCapacity,t2.username,
+            t3.course_schedule_desc_id as descId, t3.week_start weekStart, t3.week_end weekEnd, t3.weekday, t3.time
+        FROM running.t_course t1
+        LEFT JOIN running.t_user  t2 ON t1.user_id = t2.user_id AND t2.status = 1
+        LEFT JOIN running.t_course_schedule_desc t3 on t1.course_id = t3.course_id
+        WHERE 1=1
+        <if test="semesterId != null">
+            AND t1.semester_id = #{semesterId}
+        </if>
+        <if test="courseId != null">
+            AND t1.course_id = #{courseId}
+        </if>
+        AND t1. STATUS = 1
+        AND t1.user_id IS NOT NULL
+		<if test="userId != null">
+			AND t1.user_id = #{userId}
+		</if>
+        order by t1.course_id
+	</select>
+
+
+    <delete id="deleteCourseScheduleByDescId">
+        UPDATE running.t_course_schedule SET `status` = 0 WHERE `desc` = #{descId}
+    </delete>
+
+	<select id="getCourseAndTeacher" resultType="map">
+		SELECT t1.course_id `key`, t1.name, t1.course_id courseId, t2.username FROM running.t_course t1
+		LEFT JOIN running.t_user  t2 ON t1.user_id = t2.user_id AND t2.status = 1
+		WHERE t1.semester_id = #{semesterId} AND t1.status = 1 and t1.user_id is not null
+	</select>
+
+</mapper>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--动力圈图片表-->
+<mapper namespace="com.peipao.qdl.discover.dao.DiscoverImgDao">
+	<resultMap type="com.peipao.qdl.discover.model.DiscoverImg" id="discoverImg">
+		<id property="imgId" column="img_id" /><!--主键ID-->
+		<result property="discoverId" column="discover_id" /><!--外键-动力圈表主键ID-->
+		<result property="imgUrl" column="img_url" /><!--图片地址-->
+		<result property="sortNum" column="sort_num" /><!--图片排序号-->
+	</resultMap>
+
+    <sql id="column_insert" >
+        discover_id,
+        img_url,
+        sort_num
+    </sql>
+
+	<insert id="insertDiscoverImgByBatch" parameterType="java.util.List" useGeneratedKeys="true" keyColumn="img_id">
+		insert into running.`t_discover_img`(
+		  <include refid="column_insert"/>
+		)values
+		<foreach collection="discoverImgList" item="item" index="index" separator=",">
+			(
+                #{discoverId},
+                #{item.imgUrl},
+                #{item.sortNum}
+			)
+		</foreach>
+	</insert>
+
+	<select id="getImgListByDiscoverId" resultType="map">
+        SELECT img_url as imgUrl from running.t_discover_img where discover_id=#{discoverId} ORDER BY sort_num
+    </select>
+
+</mapper>

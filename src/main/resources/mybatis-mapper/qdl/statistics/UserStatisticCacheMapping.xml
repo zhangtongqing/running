@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.statistics.dao.UserStatisticDao">
+	<!--<cache />-->
+
+	<!--如果排名没有当前用户自己的排名数据，则查询用户信息数据-自由跑-->
+	<select id="getMyRankingLength" resultType="java.lang.Float">
+		SELECT TRUNCATE((ifnull(tt.runningLength,0) + ifnull(cc.compensateRunningLength,0)),2) as runningLength from (
+		   SELECT
+			   SUM(ifnull(tus.free_running_length, 0)) AS runningLength
+		   FROM running.t_user_statistic tus
+		   WHERE tus.user_id=#{userId}
+	    ) tt,(
+		    SELECT SUM(ifnull(t.running_length, 0)) as compensateRunningLength from running.t_compensate t
+			where t.user_id=#{userId} AND t.running_type=4
+        ) cc
+	</select>
+
+	<!--如果排名用户没有自己数据，则查询自己数据-晨跑-->
+	<select id="getMyRankingLengthByMorningRun" resultType="java.lang.Float">
+		SELECT TRUNCATE((ifnull(tt.morningRunningLength,0) + ifnull(cc.compensateRunningLength,0)),2) as morningRunningLength from (
+		   SELECT
+			   SUM(ifnull(tus.morning_running_length, 0)) AS morningRunningLength
+		   FROM running.t_user_statistic tus
+		   WHERE tus.user_id=#{userId}
+	    ) tt,(
+		    SELECT SUM(ifnull(t.running_length, 0)) as compensateRunningLength from running.t_compensate t
+			where t.user_id=#{userId} AND t.running_type=1
+        ) cc
+	</select>
+
+	<!--本部排名-->
+	<select id="getRankingInCourse" resultType="java.util.LinkedHashMap">
+SELECT * from (
+		SELECT
+			@rownum := @rownum + 1 AS rownum,
+			A.userId,
+			A.username,
+			A.`level`,
+			A.sex,
+			ifnull(A.imageURL, '') as imageURL,
+			TRUNCATE(A.runningLength+ IFNULL(B.compensateRunningLength,0), 2) as runningLength
+		FROM (SELECT @rownum := 0) r,
+		(
+		    SELECT k.*, sum(ifnull(tus.free_running_length, 0)) as runningLength
+			FROM (
+			    SELECT
+					tu.user_id as userId,
+					tu.username,
+					tu.`level_id` as levelId,
+					tu.sex,
+					tu.image_url imageURL,
+					CONCAT(tlv.title, ' ',tlv.`name`) as level
+				from running.t_user tu, running.t_level tlv, running.t_course tc
+				where 1=1
+				and tu.level_id = tlv.level_id
+				and tu.course_id=tc.course_id
+				and tu.course_id=#{courseId}
+				and tu.school_id=#{schoolId}
+			) k
+			LEFT JOIN running.t_user_statistic tus on tus.user_id=k.userId
+			GROUP BY user_id
+			ORDER BY runningLength desc,userId
+        ) as A
+		LEFT JOIN (
+			SELECT tm.user_id as uId, SUM(ifnull(tm.running_length, 0)) as compensateRunningLength from running.t_compensate tm
+			WHERE 1=1
+			AND tm.running_type=4
+			GROUP BY tm.user_id
+		) B ON A.userId=B.uId
+		ORDER BY runningLength desc
+		) a
+ORDER BY a.rownum ASC
+	</select>
+
+   <!--同课排行榜-晨跑-->
+	<select id="getRankingInCourseByMorningRun" resultType="java.util.LinkedHashMap">
+SELECT * from (
+		SELECT
+			@rownum := @rownum + 1 AS rownum,
+			A.userId,
+			A.username,
+			A.`level`,
+			A.sex,
+			ifnull(A.imageURL, '') as imageURL,
+			TRUNCATE(A.morningRunningLength+ IFNULL(B.compensateRunningLength,0), 2) as morningRunningLength
+		FROM (SELECT @rownum := 0) r,
+		(
+		    SELECT k.*, sum(ifnull(tus.morning_running_length, 0)) as morningRunningLength
+			FROM (
+			    SELECT
+					tu.user_id as userId,
+					tu.username,
+					tu.`level_id` as levelId,
+					tu.sex,
+					tu.image_url imageURL,
+					CONCAT(tlv.title, ' ',tlv.`name`) as level
+				from running.t_user tu, running.t_level tlv, running.t_course tc
+				where 1=1
+				and tu.level_id = tlv.level_id
+				and tu.course_id=tc.course_id
+				and tu.course_id=#{courseId}
+				and tu.school_id=#{schoolId}
+			) k
+			LEFT JOIN running.t_user_statistic tus on tus.user_id=k.userId
+			GROUP BY user_id
+			ORDER BY morningRunningLength desc,userId
+        ) as A
+		LEFT JOIN (
+			SELECT tm.user_id as uId, SUM(ifnull(tm.running_length, 0)) as compensateRunningLength from running.t_compensate tm
+			WHERE 1=1 AND tm.running_type=1
+			GROUP BY tm.user_id
+		) B ON A.userId=B.uId
+		ORDER BY morningRunningLength desc
+				) a
+ORDER BY a.rownum ASC
+	</select>
+
+
+	<!--全校所有学生排名-自由跑-->
+	<select id="getRankingInSchool" resultType="java.util.LinkedHashMap">
+		SELECT @rownum := @rownum + 1 AS rownum, res.*
+		FROM (SELECT @rownum := 0) r, (
+			SELECT
+				A.userId,
+				A.username,
+				A.`level`,
+				A.sex,
+				ifnull(A.imageURL, '') AS imageURL,
+				TRUNCATE(A.runningLength+ IFNULL(B.compensateRunningLength,0), 2) as runningLength
+			FROM
+			(
+				SELECT k.*, ifnull(us.runningLength, 0) AS runningLength
+				FROM (
+					SELECT
+						tu.user_id AS userId,
+						tu.username,
+						tu.`level_id` AS levelId,
+						tu.sex,
+						tu.image_url imageURL,
+						CONCAT(tlv.title, ' ', tlv.`name`) AS LEVEL
+					FROM running.t_user tu, running.t_level tlv
+					WHERE 1 = 1
+					AND tu.level_id = tlv.level_id
+					AND tu.`status` = 1
+					AND tu.school_id = #{schoolId}
+				) k
+				LEFT JOIN (
+				SELECT tus.user_id, SUM(ifnull(tus.free_running_length, 0)) AS runningLength
+				FROM running.t_user_statistic tus
+				WHERE tus.school_id = #{schoolId}
+				GROUP BY tus.user_id
+				) us ON us.user_id = k.userId
+			) A
+			LEFT JOIN (
+				SELECT tm.user_id as uId, SUM(ifnull(tm.running_length, 0)) as compensateRunningLength from running.t_compensate tm
+				WHERE tm.running_type=4
+				GROUP BY tm.user_id
+			) B ON A.userId=B.uId
+			ORDER BY runningLength DESC, A.userId
+		) res LIMIT 1000
+	</select>
+
+	<!--本校排行榜-晨跑-->
+	<select id="getRankingInSchoolByMornigRun" resultType="java.util.LinkedHashMap">
+		SELECT @rownum := @rownum + 1 AS rownum, res.*
+		FROM (SELECT @rownum := 0) r, (
+			SELECT
+				A.userId,
+				A.username,
+				A.`level`,
+				A.sex,
+				ifnull(A.imageURL, '') AS imageURL,
+				TRUNCATE(A.morningRunningLength+ IFNULL(B.compensateRunningLength,0), 2) as morningRunningLength
+			FROM
+			(
+				SELECT k.*, ifnull(us.morningRunningLength, 0) AS morningRunningLength
+				FROM (
+					SELECT
+						tu.user_id AS userId,
+						tu.username,
+						tu.`level_id` AS levelId,
+						tu.sex,
+						tu.image_url imageURL,
+						CONCAT(tlv.title, ' ', tlv.`name`) AS LEVEL
+					FROM running.t_user tu, running.t_level tlv
+					WHERE 1 = 1
+					AND tu.level_id = tlv.level_id
+					AND tu.`status` = 1
+					AND tu.school_id = #{schoolId}
+				) k
+				LEFT JOIN (
+				SELECT tus.user_id, SUM(ifnull(tus.morning_running_length, 0)) AS morningRunningLength
+				FROM running.t_user_statistic tus
+				WHERE tus.school_id = #{schoolId}
+				GROUP BY tus.user_id
+				) us ON us.user_id = k.userId
+			) A
+			LEFT JOIN (
+				SELECT tm.user_id as uId, SUM(ifnull(tm.running_length, 0)) as compensateRunningLength from running.t_compensate tm
+				WHERE tm.running_type=1
+				GROUP BY tm.user_id
+			) B ON A.userId=B.uId
+			ORDER BY morningRunningLength DESC, A.userId
+		) res LIMIT 1000
+#本校排行榜
+	</select>
+
+	<!--全国排名-->
+	<!--<select id="getRankingInCountry" resultType="Map">-->
+		<!--SELECT-->
+			<!--t.*-->
+		<!--from running.t_mytemp t LEFT JOIN t_qa qa ON t.userId =qa.user_id-->
+		<!--where t.userId=-1;-->
+	<!--</select>-->
+
+
+
+	<!--全国所有学生排名-->
+	<select id="getRankingInCountry" resultType="java.util.LinkedHashMap">
+		SELECT @rownum := @rownum + 1 AS rownum, res.*
+		FROM (SELECT @rownum := 0) r,
+		(
+			SELECT
+				A.userId,
+				A.username,
+				A.schoolName,
+				A.sex,
+				ifnull(A.imageURL, '') as imageURL,
+				TRUNCATE(A.runningLength+ IFNULL(B.compensateRunningLength,0), 2) as runningLength
+			FROM(
+				SELECT k.*, ifnull(us.runningLength, 0) as runningLength
+				FROM (
+					SELECT
+					tu.user_id as userId,
+					tu.username,
+					ts.`name` as schoolName,
+					tu.sex,
+					tu.image_url imageURL
+					FROM t_user tu, t_school ts
+					WHERE 1=1
+					AND tu.school_id = ts.school_id
+					AND tu.`status`=1
+				) k
+				LEFT JOIN (
+					SELECT tus.user_id, SUM(ifnull(tus.free_running_length, 0)) as runningLength
+					from t_user_statistic tus
+					GROUP BY tus.user_id
+				) us on us.user_id=k.userId
+			) A
+			LEFT JOIN (
+				SELECT tm.user_id as uId, SUM(ifnull(tm.running_length, 0)) as compensateRunningLength from running.t_compensate tm
+				WHERE tm.running_type=4
+				GROUP BY tm.user_id
+			) B ON A.userId=B.uId
+			ORDER BY runningLength DESC, A.userId
+		) res LIMIT 1000
+	</select>
+
+
+	<!--全国排行榜-晨跑-->
+	<select id="getRankingInCountryByMorningRun" resultType="java.util.LinkedHashMap">
+				SELECT @rownum := @rownum + 1 AS rownum, res.*
+		FROM (SELECT @rownum := 0) r,
+		(
+			SELECT
+				A.userId,
+				A.username,
+				A.schoolName,
+				A.sex,
+				ifnull(A.imageURL, '') as imageURL,
+				TRUNCATE(A.morningRunningLength+ IFNULL(B.compensateRunningLength,0), 2) as morningRunningLength
+			FROM(
+				SELECT k.*, ifnull(us.morningRunningLength, 0) as morningRunningLength
+				FROM (
+					SELECT
+					tu.user_id as userId,
+					tu.username,
+					ts.`name` as schoolName,
+					tu.sex,
+					tu.image_url imageURL
+					FROM t_user tu, t_school ts
+					WHERE 1=1
+					AND tu.school_id = ts.school_id
+					AND tu.`status`=1
+				) k
+				LEFT JOIN (
+					SELECT tus.user_id, SUM(ifnull(tus.morning_running_length, 0)) as morningRunningLength
+					from t_user_statistic tus
+					GROUP BY tus.user_id
+				) us on us.user_id=k.userId
+			) A
+			LEFT JOIN (
+				SELECT tm.user_id as uId, SUM(ifnull(tm.running_length, 0)) as compensateRunningLength from running.t_compensate tm
+				WHERE tm.running_type=4
+				GROUP BY tm.user_id
+			) B ON A.userId=B.uId
+			ORDER BY morningRunningLength DESC, A.userId
+		) res LIMIT 1000
+	</select>
+
+	<select id="getWeekCount" resultType="map">
+		SELECT COUNT(*) as `count`, tt.`day` from (
+			SELECT t.running_record_id, DATE_FORMAT(end_date,'%Y-%m-%d') as `day` from running.t_running_record t
+			where 1=1
+            and t.semester_id=#{statisticId}
+            and t.type=#{type}
+            and t.is_effective=#{isEffective}
+            <![CDATA[and t.end_date<#{beginTime}]]>
+            <![CDATA[and t.end_date>#{endTime}]]>
+            <if test="courseArray != null and courseArray != ''">
+                and t.user_id in (SELECT tu.user_id from t_user tu where tu.course_id in (${courseArray}))
+            </if>
+        ) tt
+		GROUP BY tt.`day` DESC
+		LIMIT 7
+	</select>
+
+</mapper>

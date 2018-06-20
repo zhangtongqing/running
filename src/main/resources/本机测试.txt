@@ -1,0 +1,89 @@
+#io-threads 根据CPU有几核，就填写几
+#server.undertow.io-threads=4
+#server.undertow.worker-threads=100
+#server.undertow.buffer-size=1024
+#server.undertow.direct-buffers=true
+
+spring.main.banner-mode=off
+server.port=8080
+server.tomcat.uri-encoding=UTF-8
+#http encoding
+spring.http.encoding.charset=UTF-8
+spring.http.encoding.enabled=true
+spring.http.encoding.force=true
+
+#converters 默认jackson
+spring.http.converters.preferred-json-mapper=jackson
+spring.jackson.time-zone=GMT+8
+spring.jackson.date-format=yyyy-MM-dd HH:mm:ss
+
+#database configuration
+
+spring.datasource.running.driverClassName = com.mysql.jdbc.Driver
+spring.datasource.running.url = jdbc:mysql://127.0.0.1:3306/running?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&autoReconnect=true&failOverReadOnly=false
+spring.datasource.running.username = dev
+spring.datasource.running.password = dev123
+
+
+spring.datasource.log.driverClassName = com.mysql.jdbc.Driver
+spring.datasource.log.url = jdbc:mysql://127.0.0.1:3306/tx_log?useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&autoReconnect=true&failOverReadOnly=false
+spring.datasource.log.username = dev
+spring.datasource.log.password = dev123
+
+#############################################
+pagehelper.helperDialect=mysql
+pagehelper.reasonable=true
+pagehelper.supportMethodsArguments=true
+pagehelper.params=count=countSql
+#############################################
+#backlog setting
+logging.config=classpath:logback-spring.xml
+#logging.level.root=INFO
+
+
+#############################################
+adminlog.api.exception=DEBUG
+
+
+spring.datasource.running.initialSize=5
+spring.datasource.running.minIdle=5
+spring.datasource.running.maxActive=20
+spring.datasource.running.maxWait=60000
+spring.datasource.running.timeBetweenEvictionRunsMillis=60000
+spring.datasource.running.minEvictableIdleTimeMillis=300000
+spring.datasource.running.validationQuery=SELECT 1 FROM DUAL
+spring.datasource.running.testWhileIdle=true
+spring.datasource.running.testOnBorrow=false
+spring.datasource.running.testOnReturn=false
+
+
+spring.datasource.log.initialSize=5
+spring.datasource.log.minIdle=5
+spring.datasource.log.maxActive=20
+spring.datasource.log.maxWait=60000
+spring.datasource.log.timeBetweenEvictionRunsMillis=60000
+spring.datasource.log.minEvictableIdleTimeMillis=300000
+spring.datasource.log.validationQuery=SELECT 1 FROM DUAL
+spring.datasource.log.testWhileIdle=true
+spring.datasource.log.testOnBorrow=false
+spring.datasource.log.testOnReturn=false
+
+#file server params
+
+#测试
+file.server.num=210
+#测试
+file.server.ip=211.159.163.143
+file.server.ipnw=10.163.0.210
+file.server.port=:8084/
+file.server.method=Query
+file.server.dport=:8081/
+
+
+# redis
+spring.redis.database=0
+spring.redis.host=127.0.0.1
+spring.redis.password=peipao
+spring.redis.port=6379
+spring.redis.timeout=2000
+

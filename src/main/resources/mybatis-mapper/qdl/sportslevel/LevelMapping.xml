@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.school.dao.LevelDao">
+
+	<resultMap type="com.peipao.qdl.school.model.Level" id="level">
+		<id property="levelId" column="level_id" />
+		<result property="schoolId" column="school_id" />
+		<result property="index" column="index" />
+		<result property="name" column="name" />
+		<result property="length" column="length" />
+	</resultMap>
+
+	<insert id="insertLevles">
+		<foreach collection="levels" index="index" item ="item" separator=";">
+			insert into running.t_level (school_id, name, length, title)
+			values
+			(#{schoolId}, #{name}, #{length}, #{title});
+
+		</foreach>
+	</insert>
+
+    <select id="queryLevelList" resultMap="level">
+        SELECT * FROM running.t_level WHERE school_id = #{schoolId}
+    </select>
+
+    <update id="updateLevels">
+        <foreach collection="levels" item = "item" index="index" open="" close="" separator=";">
+            UPDATE running.t_level	SET name = #{item.name}, length = #{item.length}, title = #{item.title} WHERE level_id = #{item.levelId}
+        </foreach>
+    </update>
+
+    <select id="findUserNewLevel" resultMap="level">
+        SELECT * from running.t_level tl where tl.length = (
+        SELECT max(t.length) from t_level t
+        where t.school_id=#{schoolId}
+        <![CDATA[and t.length<=#{length}]]>
+        ) and tl.school_id=#{schoolId} LIMIT 1
+    </select>
+
+    <select id="findZeroLevelBySchoolId" resultMap="level">
+        SELECT * FROM running.t_level t
+        WHERE t.school_id=#{schoolId}
+        AND t.length=0
+        ORDER BY t.level_id LIMIT 1
+    </select>
+
+    <select id="getMyLevelTitle" resultType="java.lang.String">
+        SELECT
+            CONCAT(tlv.title, ' ',tlv.`name`) as `level`
+        from running.t_level tlv
+        where tlv.level_id=#{levelId}
+    </select>
+
+</mapper>

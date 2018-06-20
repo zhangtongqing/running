@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.running.dao.RunningDao">
+
+	<resultMap type="com.peipao.qdl.running.model.Running" id="running">
+		<id property="runningId" column="running_id" />
+		<result property="activityId" column="activity_id" />
+		<result property="type" column="type" />
+		<result property="length" column="length" />
+		<result property="speedMin" column="speed_min" />
+		<result property="speedMax" column="speed_max" />
+		<result property="nodeCount" column="node_count" />
+		<result property="passNode" column="pass_node" />
+		<result property="byOrder" column="by_order" />
+	</resultMap>
+
+	<insert id="insertRunning" >
+		insert into running.t_running(
+			<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="runningId">
+				SELECT last_insert_id() AS runningId
+			</selectKey>
+			activity_id,
+			type,
+			length,
+			speed_min,
+			speed_max,
+		    node_count,
+			pass_node,
+			by_order
+		)
+		values (
+			#{activityId},
+			#{type},
+			#{length},
+			#{speedMin},
+			#{speedMax},
+			#{nodeCount},
+			#{passNode},
+			#{byOrder}
+		);
+	</insert>
+
+	<select id="getById" resultMap="running">
+		SELECT * FROM running.t_running WHERE running_id = #{runningId}
+	</select>
+
+	<update id="updateRunning">
+		update running.t_running
+		set
+			type = #{type},
+			length = #{length},
+			speed_min = #{speedMin},
+			speed_max = #{speedMax},
+			node_count = #{nodeCount},
+			pass_node = #{passNode},
+			by_order = #{byOrder}
+		WHERE running_id = #{runningId}
+	</update>
+
+	<delete id="deleteById">
+		DELETE FROM running.t_running where running_id = #{runningId}
+	</delete>
+
+	<select id="getByActivityId" resultMap="running">
+		SELECT * FROM running.t_running WHERE activity_id = #{activityId} LIMIT 1
+	</select>
+
+</mapper>

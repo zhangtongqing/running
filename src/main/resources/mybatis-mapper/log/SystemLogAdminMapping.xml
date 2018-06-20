@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.framework.log.dao.SystemLogAdminDao">
+
+	<resultMap type="com.peipao.framework.log.model.SystemLog" id="systemLog">
+		<id property="logId" column="log_id" />
+		<result property="description" column="description" />
+		<result property="method" column="method" />
+		<result property="params" column="params" />
+		<result property="ip" column="ip" />
+		<result property="exceptionCode" column="exception_code" />
+		<result property="exceptionDetail" column="exception_detail" />
+		<result property="userId" column="user_id" />
+		<result property="createDate" column="create_date" />
+		<result property="clientType" column="client_type" />
+		<result property="version" column="version" />
+
+	</resultMap>
+
+	<insert id="insertSystemLogAdmin" useGeneratedKeys="true" keyProperty="systemLog.logId" parameterType="com.peipao.framework.log.model.SystemLog">
+		insert into tx_log.t_system_log_admin(
+			<if test="systemLog.method != null">
+				method,
+			</if>
+			<if test="systemLog.description != null">
+				description,
+			</if>
+			<if test="systemLog.params != null">
+				params,
+			</if>
+			<if test="systemLog.ip != null">
+				ip,
+			</if>
+			<if test="systemLog.exceptionCode != null">
+				exception_code,
+			</if>
+			<if test="systemLog.exceptionDetail != null">
+				exception_detail,
+			</if>
+			<if test="systemLog.path != null">
+				path,
+			</if>
+			<if test="systemLog.clientType != null">
+				client_type,
+			</if>
+			<if test="systemLog.version != null">
+				version,
+			</if>
+			<if test="systemLog.userId != null">
+				user_id,
+			</if>
+			create_date
+		)
+		values (
+			<if test="systemLog.method != null">
+				#{systemLog.method},
+			</if>
+			<if test="systemLog.description != null">
+				#{systemLog.description},
+			</if>
+			<if test="systemLog.params != null">
+				#{systemLog.params},
+			</if>
+			<if test="systemLog.ip != null">
+				#{systemLog.ip},
+			</if>
+			<if test="systemLog.exceptionCode != null">
+				#{systemLog.exceptionCode},
+			</if>
+			<if test="systemLog.exceptionDetail != null">
+				#{systemLog.exceptionDetail},
+			</if>
+			<if test="systemLog.path != null">
+				#{systemLog.path},
+			</if>
+			<if test="systemLog.clientType != null">
+				#{systemLog.clientType},
+			</if>
+			<if test="systemLog.version != null">
+				#{systemLog.version},
+			</if>
+			<if test="systemLog.userId != null">
+				#{systemLog.userId},
+			</if>
+			#{systemLog.createDate}
+		);
+	</insert>
+
+
+
+</mapper>

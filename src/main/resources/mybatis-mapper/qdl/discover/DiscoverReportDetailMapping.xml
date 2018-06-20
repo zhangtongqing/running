@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--动力圈举报明细表-->
+<mapper namespace="com.peipao.qdl.discover.dao.DiscoverReportDetailDao">
+	<resultMap type="com.peipao.qdl.discover.model.DiscoverReportDetail" id="discoverReportDetail">
+		<id property="reportDetailId" column="report_detail_id" /><!--主键ID-->
+		<result property="reportId" column="report_id" /><!--外键-举报主表ID-->
+		<result property="userId" column="user_id" /><!--外键-举报用户ID-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+	</resultMap>
+
+	<!-- 根据动力圈ID和举报用户ID查询举报记录 -->
+	<select id="getIfUserReportTheDiscover" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM (
+             SELECT td.*, t.discover_id from running.t_discover_report_detail td LEFT JOIN running.t_discover_report t on td.report_id=t.report_id
+         ) r
+        WHERE r.discover_id=#{discoverId} and r.user_id=#{userId}
+	</select>
+
+</mapper>

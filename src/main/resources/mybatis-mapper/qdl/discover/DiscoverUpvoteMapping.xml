@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--动力圈点赞表-->
+<mapper namespace="com.peipao.qdl.discover.dao.DiscoverUpvoteDao">
+	<resultMap type="com.peipao.qdl.discover.model.DiscoverUpvote" id="discoverUpvote">
+		<id property="upvoteId" column="upvote_id" /><!--主键ID-->
+		<result property="discoverId" column="discover_id" /><!--外键-动力圈表主键ID-->
+		<result property="userId" column="user_id" /><!--点赞用户Id-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+	</resultMap>
+
+    <!-- 根据动力圈ID和点赞用户ID查询点赞记录 -->
+    <select id="getIfUserUpvoteTheDiscover" resultType="java.lang.Integer">
+        SELECT count(*) from running.t_discover_upvote t where t.discover_id=#{discoverId} and t.user_id=#{userId}
+    </select>
+
+    <!-- 查询本条动力圈点赞用户TOP5的头像集合 -->
+    <select id="getTop5UserImgs" resultType="map">
+        SELECT
+            u.image_url as userImg
+        from (
+            SELECT t.user_id from running.t_discover_upvote t where t.discover_id=#{discoverId} ORDER BY t.create_time DESC LIMIT 0,5
+        ) r
+        LEFT JOIN running.t_user u on r.user_id=u.user_id
+    </select>
+
+    <!-- 根据动力圈ID查询点赞记录列表 -->
+    <select id="getUpvoteByDiscoverId" resultType="map">
+        SELECT
+            t.upvote_id as upvoteId,
+            t.user_id as userId,
+            t.create_time as createTime
+        from running.t_discover_upvote t
+        where t.discover_id=#{discoverId}
+        ORDER BY t.create_time desc
+    </select>
+
+    <insert id="insertDiscoverUpvote" parameterType="com.peipao.qdl.discover.model.DiscoverUpvote">
+        INSERT INTO running.t_discover_upvote (discover_id, user_id, create_time)
+        VALUES (#{discoverUpvote.discoverId}, #{discoverUpvote.userId}, #{discoverUpvote.createTime});
+    </insert>
+
+    <delete id="deleteDiscoverUpvote">
+        DELETE FROM running.t_discover_upvote WHERE discover_id = #{discoverId} and user_id=#{userId}
+    </delete>
+
+
+</mapper>

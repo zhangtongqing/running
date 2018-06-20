@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.rule.dao.RunningRuleValidDao">
+
+	<resultMap type="com.peipao.qdl.rule.model.RunningRuleValid" id="runningRuleValid">
+		<id property="runningRuleValidId" column="running_rule_valid_id" /><!--主键ID-->
+		<result property="schoolId" column="school_id" /><!--所属学校ID-->
+		<result property="semesterId" column="semester_id" /><!--学期ID-->
+		<result property="speedMin" column="speed_min" /><!--最小配速-->
+		<result property="speedMax" column="speed_max" /><!--最大配速-->
+		<result property="validKiometerMin" column="valid_kiometer_min" /><!--每次跑步计入有效里程范围最小值-->
+		<result property="validKiometerMax" column="valid_kiometer_max" /><!--每次跑步计入有效里程范围最大值-->
+		<result property="hasRail" column="has_rail" /><!--是否使用校园围栏 true=是-->
+		<result property="createTime" column="create_time" /><!--本条规则记录创建时间-->
+	</resultMap>
+
+	<sql id="column_all" >
+		running_rule_valid_id as runningRuleValidId,
+		school_id as schoolId,
+		semester_id as semesterId,
+		speed_min as speedMin,
+		speed_max as speedMax,
+		valid_kiometer_min as validKiometerMin,
+		valid_kiometer_max as validKiometerMax,
+		if(has_rail, true, false) as hasRail,
+		create_time as createTime
+	</sql>
+
+	<sql id="column_insert" >
+		school_id,
+		semester_id,
+		speed_min,
+		speed_max,
+		valid_kiometer_min,
+		valid_kiometer_max,
+		has_rail,
+		create_time
+	</sql>
+
+	<select id="getRunningRuleValidBySchool" resultMap="runningRuleValid">
+		SELECT <include refid="column_all" /> from running.t_running_rule_valid t where t.semester_id=#{semesterId}
+	</select>
+
+	<select id="getRunningRuleValidById" resultMap="runningRuleValid">
+		SELECT <include refid="column_all" /> from running.t_running_rule_valid t where t.running_rule_valid_id=#{runningRuleValidId}
+	</select>
+
+    <insert id="insertRunningRuleValid" parameterType="com.peipao.qdl.rule.model.RunningRuleValid"  keyProperty="runningRuleValid.runningRuleValidId" useGeneratedKeys="true" >
+        insert into running.t_running_rule_valid(
+          <include refid="column_insert" />
+        ) values(
+            #{runningRuleValid.schoolId},
+            #{runningRuleValid.semesterId},
+            #{runningRuleValid.speedMin},
+            #{runningRuleValid.speedMax},
+            #{runningRuleValid.validKiometerMin},
+            #{runningRuleValid.validKiometerMax},
+            #{runningRuleValid.hasRail},
+            #{runningRuleValid.createTime}
+        );
+    </insert>
+
+    <update id="updateRunningRuleValid">
+      update running.t_running_rule_valid t
+      <set>
+          school_id = #{runningRuleValid.schoolId},
+          semester_id = #{runningRuleValid.semesterId},
+          speed_min = #{runningRuleValid.speedMin},
+          speed_max = #{runningRuleValid.speedMax},
+          valid_kiometer_min = #{runningRuleValid.validKiometerMin},
+          valid_kiometer_max = #{runningRuleValid.validKiometerMax},
+          has_rail = #{runningRuleValid.hasRail},
+      </set>
+        where running_rule_valid_id = #{runningRuleValid.runningRuleValidId}
+    </update>
+
+
+</mapper>

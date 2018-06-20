@@ -1,0 +1,430 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.activity.dao.ActivityDao">
+
+	<resultMap type="com.peipao.qdl.activity.model.Activity" id="activity">
+		<id property="activityId" column="activity_id" />
+		<result property="name" column="name" />
+		<result property="schoolId" column="school_id" />
+		<result property="courseId" column="course_id" />
+		<result property="desc" column="desc" />
+		<result property="startTime" column="start_time" />
+		<result property="endTime" column="end_time" />
+		<result property="frontCoverURL" column="front_cove_url" />
+		<result property="memberType" column="member_type" />
+		<result property="isSign" column="is_sign" />
+		<result property="signEndData" column="sign_end_time" />
+		<result property="enrollStartTime" column="enroll_start_time" />
+		<result property="enrollEndTime" column="enroll_end_time" />
+		<result property="rewardScore" column="reward_score" />
+		<result property="userId" column="user_id" />
+		<result property="status" column="status" />
+		<result property="enrollCount" column="enroll_count" />
+		<result property="signCount" column="sign_count"  />
+		<result property="latitude" column="latitude"  />
+		<result property="longitude" column="longitude"  />
+		<result property="effectiveSignCount" column="effective_sign_count"  />
+		<result property="type" column="type"  />
+		<result property="hasLuckDraw" column="has_luck_draw"  />
+		<result property="atmosphereURL" column="atmosphere_url"  />
+		<result property="thumbNailURL" column="thumb_nail_url"  />
+		<result property="maxCapacity" column="max_capacity"  />
+		<result property="memberStr" column="member_str"  />
+		<result property="allSucCount" column="all_suc_count"  />
+		<result property="signAddress" column="sign_address"  />
+	</resultMap>
+
+	<select id="queryActivityListByUserId" resultType="map">
+		SELECT t1.school_id as schoolId, t1.enroll_count enrollcount,t1.name, t1.front_cove_url AS frontCoverURL,
+			t1.start_time startTime, t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime, t1.end_time endTime,
+			t1.activity_id AS activityId, t1.has_luck_draw hasLuckDraw from running.t_activity t1
+		LEFT JOIN running.t_activity_member t2 ON t1.activity_id = t2.activity_id
+		WHERE t2.user_id = #{userId} AND t1.enabled = 1 and t1.status != 1 GROUP BY t1.activity_id ORDER BY t1.end_time desc LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryActivityListBySchoolId" resultType="map">
+		SELECT t1.enroll_count enrollcount, t1.name, t1.front_cove_url AS frontCoverURL,
+			t1.start_time startTime, t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime, t1.end_time endTime,
+			t1.activity_id AS activityId, t1.has_luck_draw hasLuckDraw	from running.t_activity t1
+			LEFT JOIN running.t_activity_member t2 ON t1.activity_id = t2.activity_id AND t2.user_id = #{userId}
+		WHERE t1.school_id = #{schoolId} AND t1.enabled = 1 and t1.status != 1 GROUP BY t1.activity_id ORDER BY t1.end_time desc LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryActivityListByPublishType" resultType="map">
+		SELECT t1.enroll_count enrollcount, t1.name, t1.front_cove_url AS frontCoverURL,
+			t1.start_time startTime, t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime, t1.end_time endTime,
+			t1.activity_id as activityId, t1.has_luck_draw hasLuckDraw	from running.t_activity t1
+			LEFT JOIN running.t_activity_member t2 ON t1.activity_id = t2.activity_id AND t2.user_id = #{userId}
+		WHERE  school_id is null and t1.enabled =1 and t1.status != 1 GROUP BY t1.activity_id ORDER BY t1.end_time desc  LIMIT #{from},#{num}
+	</select>
+
+	<select id="getActivityById" resultMap="activity">
+		SELECT t1.* FROM running.t_activity t1 WHERE t1.enabled =1 AND t1.activity_id = #{activityId}
+	</select>
+
+	<insert id="insertActivity">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="activityId">
+			SELECT last_insert_id() AS activityId
+		</selectKey>
+		insert into running.t_activity (`name`, school_id, course_id, front_cove_url,  member_type,
+										is_sign, user_id, `desc`, max_capacity,
+										start_time, end_time, enroll_start_time, enroll_end_time, create_time,
+										longitude, latitude, effective_sign_count, type, member_str, status, atmosphere_url,
+		<if test="rewardScore != null">
+			reward_score,
+		</if>
+		<if test="hasLuckDraw != null">
+			has_luck_draw,
+		</if>
+		thumb_nail_url, sign_address)
+		values
+		(#{name}, #{schoolId}, #{courseId}, #{frontCoverURL}, #{memberType},#{isSign},
+		 #{userId}, #{desc}, #{maxCapacity},
+		 #{startTime}, #{endTime}, #{enrollStartTime}, #{enrollEndTime}, #{createTime}, #{longitude}, #{latitude},
+		 #{effectiveSignCount}, #{type}, #{memberStr}, #{status}, #{atmosphereURL},
+		<if test="rewardScore != null">
+			#{rewardScore},
+		</if>
+		<if test="hasLuckDraw != null">
+			#{hasLuckDraw},
+		</if>
+
+		#{thumbNailURL}, #{signAddress})
+	</insert>
+
+	<select id="queryEffectiveActivityListByUserId" resultType="map">
+		SELECT
+		t1.activity_partin_record_id `key`, t1.activity_partin_record_id activityPartinRecordId, t3.name, t2.enroll_time enrollTime,
+		t1.sign_time signTime, t3.type, t3.activity_id activityId, t1.reward_score rewardScore, t1.reward_duration rewardDuration,
+		t4.kilometeor_count length, t4.thumb_url thumbURL, ifnull(t5.name,'青动力官方') publisher
+		FROM running.t_activity_partin_record t1
+		LEFT JOIN running.t_activity_member t2 on t1.activity_member_id = t2.activity_member_id
+		LEFT JOIN running.t_activity t3 on t3.activity_id = t2.activity_id and t3.enabled = 1
+		LEFT JOIN running.t_running_record t4 ON t4.running_record_id = t1.running_record_id
+		LEFT JOIN running.t_school t5 ON t5.school_id = t3.school_id
+		WHERE t2.user_id = #{userId} and t1.is_effective is NOT NULL and t1.is_effective = 88 ORDER BY t1.activity_partin_record_id DESC LIMIT #{from}, #{num}
+	</select>
+
+	<select id="queryEffectiveActivityListByUserIdCount" resultType="java.lang.Long">
+		SELECT count(*) FROM (
+		SELECT DISTINCT (t1.activity_partin_record_id) FROM running.t_activity_partin_record t1
+		LEFT JOIN running.t_activity_member t2 on t1.activity_member_id = t2.activity_member_id
+		WHERE t2.user_id = #{userId}  and t1.is_effective is not NULL  AND t1.is_effective = 88) tt
+	</select>
+
+	<select id="queryNonEffectiveActivityListByUserId" resultType="map">
+		SELECT t1.activity_partin_record_id `key`, t1.activity_partin_record_id activityPartinRecordId, t3.name, t2.enroll_time enrollTime, t1.sign_time signTime,
+			t3.type, t3.activity_id activityId, t1.is_effective isEffective, t5.name publisher, ifnull(t4.kilometeor_count,0) length FROM running.t_activity_partin_record t1
+			LEFT JOIN running.t_activity_member t2 on t1.activity_member_id = t2.activity_member_id
+			LEFT JOIN running.t_activity t3 on t3.activity_id = t2.activity_id and t3.enabled = 1
+			LEFT JOIN running.t_running_record t4 ON t4.running_record_id = t1.running_record_id
+			LEFT JOIN running.t_school t5 ON t5.school_id = t3.school_id
+		WHERE t2.user_id = #{userId} and (t1.is_effective IS NULL OR t1.is_effective != 88) ORDER BY t1.activity_partin_record_id DESC LIMIT #{from}, #{num}
+	</select>
+
+	<select id="queryNonEffectiveActivityListByUserIdCount" resultType="java.lang.Long">
+		SELECT count(1) from (
+		SELECT t1.* FROM running.t_activity_partin_record t1
+		LEFT JOIN running.t_activity_member t2 on t1.activity_member_id = t2.activity_member_id
+		WHERE t2.user_id = #{userId} and (is_effective IS NULL OR is_effective = 0) ) tt
+	</select>
+
+	<select id="getActivityList" resultType="map">
+		SELECT t1.activity_id activityId, t1.name, t1.status, t1.type, t3.username,  t1.enroll_count enrollcount, t1.member_str memberStr,
+		t1.start_time AS startTime,t1.end_time AS endTime,  t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime FROM running.t_activity t1
+		LEFT JOIN running.t_user t3 on t3.user_id = t1.user_id
+		WHERE t1.enabled = 1
+		<if test="schoolId != null">
+			AND t1.school_id = #{schoolId}
+		</if>
+		<if test="type != null and type != 0">
+			AND t1.type = #{type}
+		</if>
+		<if test=" status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test=" status != null and status == 2">
+			AND t1.status = 2 and t1.enroll_start_time >= now()
+		</if>
+		<if test=" status != null and status == 3">
+			AND now() > t1.enroll_start_time AND t1.enroll_end_time > now()
+		</if>
+		<if test=" status != null and status == 4">
+			AND t1.start_time > now() AND now() > t1.enroll_end_time
+		</if>
+		<if test=" status != null and status == 5">
+			AND now() > t1.start_time  AND t1.end_time > now()
+		</if>
+		<if test=" status != null and status == 6">
+			AND now() > t1.end_time
+		</if>
+		<if test="name != null and name != ''">
+			AND t1.name like '%#{name}%'
+		</if>
+		ORDER BY t1.activity_id desc
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="getActivityLists" resultType="map">
+		SELECT t1.activity_id activityId, t1.name, t1.status, t1.type, t3.username,  t1.enroll_count enrollcount, t1.member_str memberStr,
+		t1.start_time AS startTime,t1.end_time AS endTime,  t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime FROM running.t_activity t1
+		LEFT JOIN running.t_user t3 on t3.user_id = t1.user_id
+		WHERE t1.enabled = 1
+		<if test="schoolId != null">
+			AND t1.school_id = #{schoolId}
+		</if>
+		<if test="type != null and type != 0">
+			AND t1.type = #{type}
+		</if>
+		<if test=" status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test=" status != null and status == 2">
+			AND t1.status = 2 and t1.enroll_start_time >= now()
+		</if>
+		<if test=" status != null and status == 3">
+			AND now() > t1.enroll_start_time AND t1.enroll_end_time > now()
+		</if>
+		<if test=" status != null and status == 4">
+			AND t1.start_time > now() AND now() > t1.enroll_end_time
+		</if>
+		<if test=" status != null and status == 5">
+			AND now() > t1.start_time  AND t1.end_time > now()
+		</if>
+		<if test=" status != null and status == 6">
+			AND now() > t1.end_time
+		</if>
+		<if test="name != null and name != ''">
+			AND t1.name like concat('%',#{name},'%')
+		</if>
+		ORDER BY t1.activity_id desc
+	</select>
+
+	<select id="getActivityListCount" resultType="java.lang.Long">
+		SELECT count(*) from (
+		SELECT * FROM running.t_activity t1
+		WHERE t1.enabled != 0
+		<if test="schoolId != null">
+			AND t1.school_id = #{schoolId}
+		</if>
+		<if test="type != null and type != 0 ">
+			AND t1.type = #{type}
+		</if>
+		<if test=" status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test=" status != null and status == 2">
+			AND t1.status = 2 and now() > t1.enroll_start_time
+		</if>
+		<if test=" status != null and status == 3">
+			AND now() > t1.enroll_start_time AND t1.enroll_end_time > now()
+		</if>
+		<if test=" status != null and status == 4">
+			AND t1.start_time > now() AND now() > t1.enroll_end_time
+		</if>
+		<if test=" status != null and status == 5">
+			AND now() > t1.start_time  AND t1.end_time > now()
+		</if>
+		<if test=" status != null and status == 6">
+			AND now() > t1.end_time
+		</if>
+		<if test="name != null and name != ''">
+			AND t1.name like concat('%',#{name},'%')
+		</if>
+		) t
+	</select>
+
+	<update id="deleteActivity">
+		UPDATE running.t_activity SET enabled = 0 WHERE activity_id = #{activityId}
+	</update>
+
+	<update id="updateActivityEnrollAndSign">
+		UPDATE running.t_activity
+		<set>
+			<if test="enrollcount != null">
+				enroll_count = enroll_count+ #{enrollcount},
+			</if>
+			<if test="signcount != null">
+				sign_count = sign_count + #{signcount},
+			</if>
+			<if test="allSucCount != null">
+				all_suc_count = all_suc_count + #{allSucCount},
+			</if>
+		</set>
+		WHERE activity_id = #{activityId}
+	</update>
+
+	<select id="countActivityByUserId" resultType="java.lang.Integer">
+		SELECT count(*) FROM running.t_activity WHERE enabled = 1 AND user_id = #{userId}
+	</select>
+
+	<select id="getOfficialActivityListForWeb" resultType="map">
+		SELECT t1.activity_id activityId, t1.name, t1.status, t1.type, t2.username,  t1.enroll_count enrollcount,
+		t1.start_time AS startTime,t1.end_time AS endTime,  t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime FROM running.t_activity t1
+		LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id AND t2.status = 1
+		WHERE t1.school_id is null AND t1.enabled =1
+		<if test="type != null and type != 0 ">
+			AND t1.type = #{type}
+		</if>
+		<if test=" status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test=" status != null and status == 2">
+			AND t1.status = 2 and now() > t1.enroll_start_time
+		</if>
+		<if test=" status != null and status == 3">
+			AND now() > t1.enroll_start_time AND t1.enroll_end_time > now()
+		</if>
+		<if test=" status != null and status == 4">
+			AND t1.start_time > now() AND now() > t1.enroll_end_time
+		</if>
+		<if test=" status != null and status == 5">
+			AND now() > t1.start_time  AND t1.end_time > now()
+		</if>
+		<if test=" status != null and status == 6">
+			AND now() > t1.end_time
+		</if>
+		<if test="name != null and name != ''">
+			AND t1.name like concat('%',#{name},'%')
+		</if>
+		ORDER BY t1.activity_id desc
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="getOfficialActivityListForWebCount" resultType="java.lang.Long">
+		SELECT count(*) FROM running.t_activity t1
+		WHERE t1.school_id is null AND t1.enabled = 1
+		<if test="type != null and type != 0 ">
+			AND t1.type = #{type}
+		</if>
+		<if test=" status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test=" status != null and status == 2">
+			AND t1.status = 2 and now() > t1.enroll_start_time
+		</if>
+		<if test=" status != null and status == 3">
+			AND now() > t1.enroll_start_time AND t1.enroll_end_time > now()
+		</if>
+		<if test=" status != null and status == 4">
+			AND t1.start_time > now() AND now() > t1.enroll_end_time
+		</if>
+		<if test=" status != null and status == 5">
+			AND now() > t1.start_time  AND t1.end_time > now()
+		</if>
+		<if test=" status != null and status == 6">
+			AND now() > t1.end_time
+		</if>
+		<if test="name != null and name != ''">
+			AND t1.name like concat('%',#{name},'%')
+		</if>
+	</select>
+
+	<update id="updateActivity">
+		UPDATE running.t_activity
+        <set>
+			<if test="name != null and name != ''">
+				name = #{name},
+			</if>
+			<if test="frontCoverURL != null and frontCoverURL != ''">
+				front_cove_url = #{frontCoverURL},
+			</if>
+			<if test="startTime != null ">
+				start_time = #{startTime},
+			</if>
+			<if test="endTime != null ">
+				end_time = #{endTime},
+			</if>
+			<if test="memberType != null">
+				member_type = #{memberType},
+			</if>
+			<if test="isSign != null">
+				is_sign = #{isSign},
+			</if>
+			<if test="enrollStartTime != null">
+				enroll_start_time = #{enrollStartTime},
+			</if>
+			<if test="enrollEndTime != null">
+				enroll_end_time = #{enrollEndTime},
+			</if>
+			<if test="rewardScore != null">
+				reward_score = #{rewardScore},
+			</if>
+			<if test="desc != null and desc != ''">
+				`desc` = #{desc},
+			</if>
+			<if test="type != null">
+				type = #{type},
+			</if>
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="longitude != null">
+				longitude = #{longitude},
+			</if>
+			<if test="latitude != null">
+				latitude = #{latitude},
+			</if>
+			<if test="effectiveSignCount != null">
+				effective_sign_count = #{effectiveSignCount},
+			</if>
+			<choose>
+				<when test="courseId != null and courseId != ''">
+					course_id = #{courseId},
+				</when>
+				<otherwise>
+					course_id = null,
+				</otherwise>
+			</choose>
+			<if test="memberStr != null">
+				member_str = #{memberStr},
+			</if>
+			<if test="userId != null">
+				user_id = #{userId},
+			</if>
+			<if test="atmosphereURL != null and atmosphereURL != ''">
+				atmosphere_url = #{atmosphereURL},
+			</if>
+			<if test="thumbNailURL != null and thumbNailURL != ''">
+				thumb_nail_url = #{thumbNailURL},
+			</if>
+			<if test="hasLuckDraw != null">
+				has_luck_draw = #{hasLuckDraw},
+			</if>
+			<if test="maxCapacity != null">
+				max_capacity = #{maxCapacity},
+			</if>
+			<if test="signAddress != null and signAddress != ''">
+				sign_address = #{signAddress},
+			</if>
+		</set>
+		WHERE activity_id = #{activityId} and status != 0
+	</update>
+
+	<select id="queryAllSchoolActivityList" resultType="map">
+		SELECT t1.activity_id `key`, t1.activity_id activityId, t1.name, t1.enroll_count enrollcount, t1.sign_count signcount, t1.start_time AS startTime,
+		t1.end_time AS endTime, t1.enroll_start_time enrollStartTime, t1.enroll_end_time enrollEndTime, t1.front_cove_url frontCoveUrl,
+			if(t2.status=0,null,t2.username) username,
+		t3.name publisher FROM running.t_activity t1
+		LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id
+		LEFT JOIN running.t_school t3 ON t3.school_id = t1.school_id
+		WHERE t1.school_id is NOT null AND t1.enabled =1 and t1.status != 1
+		ORDER BY t1.activity_id desc
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryAllSchoolActivityListCount" resultType="java.lang.Long">
+		SELECT count(*) FROM running.t_activity t1 WHERE t1.school_id is NOT null AND t1.enabled =1 and t1.status != 1
+	</select>
+
+	<select id="getQuotiety" resultType="map">
+		SELECT baoming_quotiety as baomingQuotiety, canyu_quotiety as canyuQuotiety, renci_quotiety as renciQuotiety from running.t_quotiety
+	</select>
+
+	<!--运动首页显示可参加的活动-->
+	<select id="getActivityAccess" resultType="map">
+		select t1.activity_id activityId, t1.thumb_nail_url thumbNailURL from running.t_activity t1
+			LEFT JOIN running.t_activity_member t2 on t1.activity_id = t2.activity_id
+		WHERE t1.enabled = 1 AND now() >= t1.start_time AND t1.end_time > now() AND t2.user_id = #{userId} AND t1.effective_sign_count > t2.suc_count
+	</select>
+</mapper>

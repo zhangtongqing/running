@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.morningtrain.dao.MorningTrainRecordDao">
+
+	<resultMap type="com.peipao.qdl.morningtrain.model.MorningTrainRecord" id="morningTrainRecord">
+		<id property="morningTrainRecordId" column="morning_train_record_id" /><!--主键ID-->
+		<result property="userId" column="user_id" /><!--userId-->
+		<result property="semesterId" column="semester_id" /><!--学期Id-->
+        <result property="startDate" column="start_date" /><!--开始时间 签到时间-->
+        <result property="endDate" column="end_date" /><!--结束时间 签退时间-->
+		<result property="duration" column="duration" /><!--时长-->
+		<result property="durationStr" column="duration_str" /><!--时长字符-->
+		<result property="isEffective" column="is_effective" /><!--是否有效-->
+
+        <result property="signLatitude" column="sign_latitude" /><!--签到纬度值-->
+        <result property="signLongitude" column="sign_longitude" /><!--签到经度值-->
+
+        <result property="latitudeOut" column="latitude_out" /><!--签退纬度值-->
+        <result property="longitudeOut" column="longitude_out" /><!--签退经度值-->
+	</resultMap>
+
+    <resultMap type="com.peipao.qdl.morningtrain.model.MorningTrainRecordVo" id="morningTrainRecordVo">
+        <result property="startDate" column="start_date" /><!--开始时间 签到时间-->
+        <result property="endDate" column="end_date" /><!--结束时间 签退时间-->
+        <result property="duration" column="duration" /><!--时长-->
+        <result property="durationStr" column="duration_str" /><!--时长字符-->
+        <result property="isEffective" column="is_effective" /><!--是否有效-->
+        <result property="signLatitude" column="sign_latitude" /><!--签到纬度值-->
+        <result property="signLongitude" column="sign_longitude" /><!--签到经度值-->
+        <result property="latitudeOut" column="latitude_out" /><!--签退纬度值-->
+        <result property="longitudeOut" column="longitude_out" /><!--签退经度值-->
+    </resultMap>
+
+	<select id="getMorningTrainRecordToday" resultMap="morningTrainRecordVo">
+		SELECT * FROM running.t_morning_train_record
+        WHERE user_id = #{userId}
+        AND semester_id = #{semesterId}
+        <![CDATA[AND start_date > #{startDate}]]>
+        <![CDATA[AND start_date < #{endDate}]]>
+        LIMIT 1
+	</select>
+
+    <select id="findMorningTrainRecordToday" resultMap="morningTrainRecord">
+        SELECT * FROM running.t_morning_train_record
+        WHERE user_id = #{userId}
+        AND semester_id = #{semesterId}
+        <![CDATA[AND start_date > #{startDate}]]>
+        <![CDATA[AND start_date < #{endDate}]]>
+        LIMIT 1
+    </select>
+
+
+
+	<select id="insertMorningTrainRecord" parameterType="com.peipao.qdl.morningtrain.model.MorningTrainRecord">
+		insert into running.t_morning_train_record (
+            user_id,
+			semester_id,
+			start_date,
+            sign_latitude,
+            sign_longitude
+		) values (
+			#{userId},
+			#{semesterId},
+			#{startDate},
+            #{signLatitude},
+            #{signLongitude}
+		)
+	</select>
+
+    <select id="updateMorningTrainRecord" parameterType="com.peipao.qdl.morningtrain.model.MorningTrainRecord">
+        update running.t_morning_train_record
+        <set>
+            <if test="endDate != null" >
+                end_date = #{endDate},
+            </if>
+            <if test="duration != null and duration != ''" >
+                duration = #{duration},
+            </if>
+            <if test="durationStr != null and durationStr != ''" >
+                duration_str = #{durationStr},
+            </if>
+            <if test="isEffective != null" >
+                is_effective = #{isEffective},
+            </if>
+            <if test="latitudeOut != null" >
+                latitude_out = #{latitudeOut},
+            </if>
+            <if test="longitudeOut != null" >
+                longitude_out = #{longitudeOut},
+            </if>
+        </set>
+        where morning_train_record_id = #{morningTrainRecordId}
+    </select>
+
+</mapper>

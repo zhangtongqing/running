@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.schooluser.dao.SchoolUserDao">
+
+	<resultMap type="com.peipao.qdl.schooluser.model.Student" id="student">
+		<id property="userId" column="user_id" />
+		<result property="schoolId" column="school_id" />
+		<result property="username" column="username" />
+		<result property="studentNO" column="student_no" />
+		<result property="admission" column="admission" />
+		<result property="classname" column="classname" />
+		<result property="sex" column="sex" />
+		<result property="status" column="status" />
+		<result property="mobile" column="mobile" />
+		<result property="uId" column="u_id" />
+	</resultMap>
+
+
+	<insert id="insertStudentLibrary">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="userId">
+			SELECT last_insert_id() AS userId
+		</selectKey>
+		insert into running.t_student_library (school_id, username, student_no, admission, classname, sex) values
+			(#{schoolId}, #{username}, #{studentNO}, #{admission}, #{classname}, #{sex});
+	</insert>
+
+	<select id="queryByStudent" resultMap="student">
+		select user_id, school_id, username, student_no, admission, classname, sex, status, u_id
+		from running.t_student_library
+		WHERE 1 = 1 AND enabled = 1
+		<if test="studentNO != null and studentNO != ''">
+			AND student_no = #{studentNO}
+		</if>
+		<if test="schoolId != null ">
+			AND school_id = #{schoolId}
+		</if>
+		<if test="userId != null">
+			AND user_id = #{userId}
+		</if>
+		 LIMIT 1
+	</select>
+
+	<update id="updateStudent">
+		update running.t_student_library
+		<set>
+			<if test="schoolId != null">
+				school_id = #{schoolId},
+			</if>
+			<if test="username != null and username != ''">
+				username = #{username},
+			</if>
+			<if test="sex != null ">
+				sex = #{sex},
+			</if>
+			<if test="studentNO != null and studentNO != ''">
+				student_no = #{studentNO},
+			</if>
+			<if test="classname != null and classname != ''">
+				classname = #{classname},
+			</if>
+			<if test="admission != null and admission != ''">
+				admission = #{admission},
+			</if>
+			<if test="status != null ">
+				status = #{status},
+			</if>
+			<if test="uId != null">
+				u_id = #{uId}
+			</if>
+		</set>
+		where user_id = #{userId}
+	</update>
+
+	<delete id="deleteStudent">
+		UPDATE running.t_student_library SET enabled = 0 WHERE user_id = #{userId}
+	</delete>
+
+	<select id="getStudentList" resultMap="student">
+		SELECT t1.user_id, t1.username, t1.student_no, t1.admission, t1.classname, t1.sex, t1.status, t2.mobile  from (
+		select t1.* from running.t_student_library t1
+		WHERE school_id = #{schoolId} AND t1.enabled = 1
+		<if test="status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test="status != null and status == 2">
+			AND t1.status = 0
+		</if>
+		<if test="username != null and username != ''">
+			AND t1.username LIKE CONCAT('%',#{username},'%')
+		</if>
+		<if test="studentNO != null and studentNO != ''">
+			AND t1.student_no LIKE CONCAT('%',#{studentNO},'%')
+		</if>
+		<if test="classname != null and classname != ''">
+			AND (t1.classname in (${classname})
+			<if test="unselect != null and unselect !='' ">
+				OR t1.classname is null OR t1.classname = ''
+			</if>
+			)
+		</if>
+		<choose>
+			<when test="mobile != null and mobile != ''">
+
+			</when>
+			<otherwise>
+				ORDER BY t1.user_id DESC LIMIT #{from}, #{num}
+			</otherwise>
+		</choose>
+
+		) t1 LEFT JOIN running.t_user t2 on t2.user_id = t1.u_id
+		WHERE 1=1
+		<choose>
+			<when test="mobile != null and mobile != ''">
+				AND t2.mobile LIKE CONCAT('%',${mobile},'%')
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+
+	<!-- 这里返回map而不是student，因为service里面需要将sex等进行设置为字符串，专业map更方便 -->
+	<select id="getAllStudentList" resultType="map">
+		SELECT t1.user_id, t1.username, t1.student_no, t1.admission, t1.classname, t1.sex, t1.status, t2.mobile  from (
+		select t1.* from running.t_student_library t1
+		WHERE school_id = #{schoolId} AND t1.enabled = 1
+		<if test="status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test="status != null and status == 2">
+			AND t1.status = 0
+		</if>
+		<if test="username != null and username != ''">
+			AND t1.username LIKE CONCAT('%',#{username},'%')
+		</if>
+		<if test="studentNO != null and studentNO != ''">
+			AND t1.student_no LIKE CONCAT('%',#{studentNO},'%')
+		</if>
+		<if test="classname != null and classname != ''">
+			AND (t1.classname in (${classname})
+			<if test="unselect != null and unselect !='' ">
+				OR t1.classname is null
+			</if>
+			)
+		</if>
+		) t1 LEFT JOIN running.t_user t2 on t2.user_id = t1.u_id
+		WHERE 1=1
+		<if test="mobile != null and mobile != ''">
+			AND t2.mobile LIKE CONCAT('%',${mobile},'%')
+		</if>
+	</select>
+
+	<select id="getStudentListCount" resultType="java.lang.Long">
+		select count(*) from running.t_student_library t1
+		<if test="mobile != null and mobile != ''">
+			 LEFT JOIN running.t_user t2 on t2.user_id = t1.u_id
+		</if>
+		WHERE t1.school_id = #{schoolId} AND t1.enabled = 1
+		<if test="status != null and status == 1">
+			AND t1.status = 1
+		</if>
+		<if test="status != null and status == 2">
+			AND t1.status = 0
+		</if>
+		<if test="username != null and username != ''">
+			AND t1.username LIKE CONCAT('%',#{username},'%')
+		</if>
+		<if test="studentNO != null and studentNO != ''">
+			AND t1.student_no LIKE CONCAT('%',#{studentNO},'%')
+		</if>
+		<if test="mobile != null and mobile != ''">
+			AND t2.mobile LIKE CONCAT('%',#{mobile},'%')
+		</if>
+		<if test="classname != null and classname != ''">
+			AND (t1.classname in (${classname})
+			<if test="unselect != null and unselect !='' ">
+				OR t1.classname is null
+			</if>
+			)
+		</if>
+	</select>
+
+	<select id="getTeacherNameList" resultType="map">
+		SELECT user_id userId, username FROM running.t_user WHERE school_id = #{schoolId} AND status = 1 AND (user_type = 2 OR user_type = 3)
+	</select>
+
+	<select id="getClassList" resultType="java.lang.String">
+		SELECT distinct(classname) FROM running.t_student_library where school_id = #{schoolId} AND enabled = 1 and classname is not null and classname !=''
+		<if test="classname != null and classname != ''">
+			and classname LIKE CONCAT('%',#{classname},'%')
+		</if>
+	</select>
+
+    <select id="getNumberGroupByClass" resultType="map">
+        SELECT t.classname,t.numAll,r.num from (
+            SELECT classname, COUNT(*) AS numAll
+            FROM running.t_student_library
+            WHERE school_id = #{schoolId}
+			AND enabled = 1
+			<if test="classname != null and classname != ''">
+				and classname LIKE CONCAT('%',#{classname},'%')
+			</if>
+          GROUP BY classname
+        ) t LEFT JOIN (
+            SELECT classname, COUNT(*) AS num
+            FROM running.t_student_library
+            WHERE school_id = #{schoolId}
+            AND enabled = 1
+            AND u_id is not null
+			<if test="classname != null and classname != ''">
+				and classname LIKE CONCAT('%',#{classname},'%')
+			</if>
+            GROUP BY classname
+        ) r on t.classname=r.classname
+    </select>
+
+</mapper>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.guide.dao.GuideItemDao">
+
+	<resultMap type="com.peipao.qdl.guide.model.GuideItem" id="guideItem">
+		<id property="guideItemId" column="guide_item_id" />
+		<id property="guideId" column="guide_id" />
+		<result property="itemTitle" column="item_title" />
+		<result property="desc" column="desc" />
+		<result property="type" column="type" />
+		<result property="packageName" column="package_name" />
+		<result property="path" column="path" />
+		<result property="imageURL" column="image_url" />
+		<result property="createTime" column="create_time" />
+		<result property="createUserId" column="create_user_id" />
+		<result property="updateTime" column="update_time" />
+		<result property="updateUserId" column="update_user_id" />
+		<result property="logicDelete" column="logic_delete" />
+	</resultMap>
+
+	<select id="getGuideItemList" resultType="map">
+		SELECT guide_item_id, item_title itemTitle, `desc`, package_name packageName, path, image_url imageURL, type FROM running.t_guide_item
+		WHERE guide_id = #{guideId} and logic_delete = 0
+	</select>
+
+	<select id="getGuideItemById" resultMap="guideItem">
+		select * FROM running.t_guide_item WHERE guide_item_id = #{guideItemId} and logic_delete = 0 LIMIT 1
+	</select>
+
+	<update id="updateGuideItem">
+		UPDATE running.t_guide_item
+	    <set>
+			<if test="itemTitle != null and itemTitle != ''">
+				item_title = #{itemTitle},
+			</if>
+
+			<if test="desc != null and desc != ''">
+				`desc`= #{desc},
+			</if>
+			<if test="type != null ">
+				type = #{type},
+			</if>
+			<if test="packageName != null and packageName != ''">
+				package_name = #{packageName},
+			</if>
+			<if test="path != null and path != ''">
+				path = #{path},
+			</if>
+			<if test="imageURL != null and imageURL != ''">
+				image_url = #{imageURL},
+			</if>
+			<if test="updateTime != null ">
+				update_time = #{updateTime},
+			</if>
+
+			<if test="updateUserId != null ">
+				update_user_id = #{updateUserId},
+			</if>
+		</set>
+		where guide_item_id = #{guideItemId}
+	</update>
+
+	<insert id="addGuideItem">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="guideItemId">
+			SELECT last_insert_id() AS guideItemId
+		</selectKey>
+		insert into running.t_guide_item (item_title, guide_id, `desc`, type, package_name, path, image_url, create_user_id, create_time, update_user_id, update_time, logic_delete)
+		values (#{itemTitle},#{guideId},#{desc},#{type},#{packageName},#{path}, #{imageURL},#{createUserId},#{createTime},#{updateUserId},#{updateTime}, 0);
+	</insert>
+
+	<delete id="deleteGuideItemByGuideId">
+		update running.t_guide_item
+		set logic_delete = 1
+		where guide_id = #{guideId}
+	</delete>
+
+	<delete id="deleteGuideItem">
+		update running.t_guide_item
+		set logic_delete = 1
+		where guide_item_id = #{guideItemId}
+	</delete>
+
+
+</mapper>

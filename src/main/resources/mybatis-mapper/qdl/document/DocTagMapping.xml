@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocTagMapping-->
+<!--* 功能描述：DocTagMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章标签-->
+<mapper namespace="com.peipao.qdl.document.dao.DocTagDao">
+	<resultMap type="com.peipao.qdl.document.model.DocTag" id="docTag">
+		<id property="docTagId" column="doc_tag_id" /><!--主键ID-->
+		<result property="docId" column="doc_id" /><!--文章主键ID-->
+		<result property="tagName" column="tag_name" /><!--文章标签-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="logicDelete" column="logic_delete" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+	</resultMap>
+
+	<select id="getTagTagNameList" resultType="map">
+		SELECT doc_id AS docId,tag_name AS tagName
+		FROM running.t_doc_tag
+		<if test="docIdList != null">
+			<foreach collection="docIdList" item="item" index="index" open="WHERE logic_delete=0 AND (" close=")" separator="OR">
+				doc_id=#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<insert id="insertDocTagByBatch" parameterType="com.peipao.qdl.document.model.DocTag">
+		INSERT INTO running.t_doc_tag( doc_id,tag_name,create_time )
+		VALUES
+		<foreach collection="docTagList" item="item" index="index" separator=",">
+			(
+			#{docId},
+			#{item.tagName},
+			#{item.createTime}
+			)
+		</foreach>
+	</insert>
+
+	<update id="updateDocTagLogicDelete">
+		UPDATE running.t_doc_tag SET logic_delete = #{LogicDelete} WHERE doc_id = #{docId}
+	</update>
+
+	<delete id="deleteDocTag">
+		DELETE FROM running.t_doc_tag WHERE doc_id = #{docId}
+	</delete>
+</mapper>

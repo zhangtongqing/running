@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.user.dao.UserDao">
+
+	<resultMap type="com.peipao.qdl.user.model.User" id="user">
+		<id property="userId" column="user_id" />
+		<result property="mobile" column="mobile" />
+		<result property="email" column="email" />
+		<result property="nickname" column="nick_name" />
+		<result property="username" column="username" />
+		<result property="createTime" column="create_time" />
+		<result property="status" column="status" />
+		<result property="sex" column="sex" />
+		<result property="imageURL" column="image_url" />
+		<result property="userType" column="user_type" />
+		<result property="description" column="description" />
+		<result property="birthday" column="birthday" />
+		<result property="schoolId" column="school_id" />
+		<result property="courseId" column="course_id" />
+		<result property="token" column="token" />
+		<result property="lastLoginTime" column="last_login_time" />
+		<result property="classname" column="classname" />
+		<result property="studentNO" column="student_no" />
+		<result property="height" column="height" />
+		<result property="weight" column="weight" />
+		<result property="admission" column="admission" />
+		<result property="levelId" column="level_id" />
+		<result property="individualSign" column="individualSign" />
+		<result property="backgroundURL" column="background_url" />
+	</resultMap>
+
+	<insert id="insertUser">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="userId">
+			SELECT last_insert_id() AS userId
+		</selectKey>
+		insert into
+			running.t_user(password,mobile,status,nick_name,sex,user_type,create_time, username, token,
+		<if test="courseId != null">
+			course_id,
+		</if>
+		school_id )
+		values
+		(#{password},#{mobile},#{status},#{nickname},#{sex},#{userType},#{createTime}, #{username}, #{token},
+		<if test="courseId != null">
+			#{courseId},
+		</if>
+		#{schoolId})
+	</insert>
+
+	<update id="updatePassword" parameterType="Map">
+		update running.t_user set password = #{password}
+		where user_id = #{userId}
+	</update>
+	
+	<select id="getUserByMobile" parameterType="String" resultMap="user">
+		select * from running.t_user
+		where status!=0 and mobile=#{mobile}
+	</select>
+
+	<!--登录-->
+	<select id="queryUserLoginParams"  resultType="map">
+		select t1.user_id AS userId, t1.token, t1.password ,t1.user_type as userType, t1.username, t1.school_id schoolId from running.t_user t1
+		where t1.status != 0
+		<if test="nickname != null and nickname != ''">
+			AND t1.nick_name = #{nickname}
+		</if>
+		<if test="mobile != null and mobile != ''">
+			AND t1.mobile = #{mobile}
+		</if>
+	</select>
+
+	<select id="queryIdByPhone" parameterType="String" resultType="java.lang.Long">
+		select user_id from running.t_user
+		where mobile=#{mobile} AND status = 1
+	</select>
+
+	<select id="getUserById" parameterType="java.lang.Long" resultMap="user">
+		SELECT * FROM running.t_user WHERE user_id = #{userId} AND status = 1
+	</select>
+
+	<update id="updateUser">
+		update running.t_user
+		<set>
+			<if test="username != null and username != '' ">
+				username = #{username},
+			</if>
+			<if test="nickname != null and nickname != '' ">
+				nick_name = #{nickname},
+			</if>
+			<if test="description != null and description != ''">
+				description=#{description},
+			</if>
+			<if test="sex != null">
+				sex = #{sex},
+			</if>
+			<if test="imageURL != null and imageURL !='' ">
+				image_url=#{imageURL},
+			</if>
+			<if test="backgroundURL != null and backgroundURL !='' ">
+				background_url=#{backgroundURL},
+			</if>
+			<if test="token != null and token !='' ">
+				token=#{token},
+			</if>
+			<if test="lastLoginTime != null">
+				last_login_time=#{lastLoginTime},
+			</if>
+			<if test="schoolId != null">
+				school_id=#{schoolId},
+			</if>
+			<if test="studentNO != null and studentNO !='' ">
+				student_no=#{studentNO},
+			</if>
+			<if test="courseId != null ">
+				course_id=#{courseId},
+			</if>
+			<if test="birthday != null and birthday !='' ">
+				birthday=#{birthday},
+			</if>
+			<if test="height != null ">
+				height=#{height},
+			</if>
+			<if test="weight != null ">
+				weight=#{weight},
+			</if>
+			<if test="admission != null and admission != ''">
+				admission=#{admission},
+			</if>
+			<if test="classname != null and classname != '' ">
+				classname=#{classname},
+			</if>
+			<if test="individualSign != null and individualSign != '' ">
+				individualSign=#{individualSign},
+			</if>
+			<if test="levelId != null  ">
+				level_id=#{levelId},
+			</if>
+			<if test="mobile != null and mobile != '' ">  <!--pc端有这个需求，app修改手机版必须是别的接口-->
+				mobile=#{mobile},
+			</if>
+			<if test="userType != null and userType != '' ">
+				user_type=#{userType},
+			</if>
+		</set>
+		where user_id = #{userId}
+	</update>
+
+	<update id="setUserParamToNull">
+		update running.t_user
+		<set>
+			<if test="description != null and description != ''">
+				description = null,
+			</if>
+			<if test="sex != null">
+				sex = null,
+			</if>
+			<if test="imageURL != null and imageURL !='' ">
+				image_url = null,
+			</if>
+			<if test="backgroundURL != null and backgroundURL !='' ">
+				background_url= null,
+			</if>
+			<if test="lastLoginTime != null">
+				last_login_time= null,
+			</if>
+			<if test="schoolId != null">
+				school_id= null,
+			</if>
+			<if test="studentNO != null and studentNO !='' ">
+				student_no= null,
+			</if>
+			<if test="courseId != null ">
+				course_id = null,
+			</if>
+			<if test="birthday != null and birthday !='' ">
+				birthday = null,
+			</if>
+			<if test="height != null ">
+				height = null,
+			</if>
+			<if test="weight != null ">
+				weight = null,
+			</if>
+			<if test="admission != null and admission != ''">
+				admission = null,
+			</if>
+			<if test="classname != null and classname != '' ">
+				classname = null,
+			</if>
+			<if test="individualSign != null and individualSign != '' ">
+				individualSign = null,
+			</if>
+			<if test="token != null and token != '' ">
+				token = null,
+			</if>
+		</set>
+		where user_id = #{userId}
+	</update>
+
+	<delete id="deleteUserById">
+		UPDATE running.t_user SET status = 0
+		where user_id = #{id}
+	</delete>
+
+	<update id="updatePasswordByPhone">
+		update running.t_user set password = #{password} where mobile = #{mobile} AND status = 1
+	</update>
+
+	<select id="queryUserByUserCondtion" resultMap="user">
+		select * from running.t_user
+		where status = 1
+		<if test="mobile != null and mobile != ''">
+			AND (mobile = #{mobile} OR nick_name = #{mobile})
+		</if>
+		<if test="nickname != null and nickname != ''">
+			AND (nick_name = #{nickname} OR mobile = #{nickname})
+		</if>
+		<if test="studentNO != null and studentNO != ''">
+			AND student_no = #{studentNO}
+		</if>
+		<if test="schoolId != null ">
+			AND school_id = #{schoolId}
+		</if>
+		LIMIT 1
+	</select>
+
+	<select id="queryUsernameAndUserType" resultType="map">
+		select username, user_type AS userType
+		from running.t_user
+		WHERE user_id = #{userId} AND status = 1
+	</select>
+
+	<select id="getSchoolUserCount" resultType="int">
+		select count(user_id) as count
+		from running.t_user
+        WHERE school_id = #{schoolId}
+		<if test="userType != null">
+			AND user_type = #{userType}
+		</if>
+        AND `status`=#{status}
+		<if test="courseArray != null and courseArray != ''">
+			and user_id in (
+				SELECT tu.user_id from t_user tu where tu.course_id in (${courseArray})
+			)
+		</if>
+	</select>
+
+	<!--AND user_type in(1,2) 产品要求所有使用系统的账号都统计-->
+	<select id="getSchoolUserCountByTheType" resultType="int">
+		select count(user_id) as count
+		from running.t_user
+		WHERE school_id = #{schoolId}
+		AND `status`=#{status}
+	</select>
+
+	<select id="queryMobileById" resultType="java.lang.String">
+		SELECT mobile FROM running.t_user
+		WHERE user_id = #{userId} AND status = 1
+	</select>
+
+	<select id="queryUserForMainPage" resultType="map">
+		SELECT t1.sex, t1.username, t1.individualSign, t1.image_url AS imageURL, t1.background_url AS backgroundURL, t2.name AS schoolName,
+			ifnull(t3.title, '') as title,
+			ifnull(t3.name, '') AS levelName,
+			ifnull(t1.admission, '') as admission
+		FROM running.t_user t1
+	    LEFT JOIN running.t_school t2 ON t2.school_id = t1.school_id
+		LEFT JOIN running.t_level t3 ON t3.level_id = t1.level_id
+		WHERE user_id = #{userId} AND status = 1
+	</select>
+
+	<select id="queryUserForPersonalInfo" resultType="map">
+		SELECT t1.image_url AS imageURL,  t1.mobile, t1.nick_name AS nickname, t1.individualSign,  t1.sex, t1.username, t1.birthday, t1.height, t1.weight,
+			t2.name AS schoolName, t3.name, t1.admission, t1.classname FROM running.t_user t1
+	    LEFT JOIN running.t_school t2 ON t2.school_id = t1.school_id
+		LEFT JOIN running.t_course t3 ON t3.course_id = t1.course_id
+		WHERE t1.user_id = #{userId} AND t1.status = 1
+	</select>
+
+	<select id="queryUserBasicInfoForweb" resultType="map">
+		SELECT t1.mobile, t1.nick_name AS nickname, t1.sex, t1.username  FROM running.t_user t1
+		WHERE t1.user_id = #{userId} AND t1.status = 1
+	</select>
+
+	<select id="queryTeacherList">
+		SELECT t1.user_id userId, t1.nick_name nickname, t1.username, t1.mobile, t1.sex, t1.user_type userType FROM running.t_user t1
+		WHERE t1.school_id = #{schoolId} AND t1.status = 1 AND user_type = 2
+	</select>
+
+	<resultMap type="com.peipao.qdl.user.model.User" id="teacher">
+		<id property="userId" column="user_id" />
+		<result property="mobile" column="mobile" />
+		<result property="nickname" column="nick_name" />
+		<result property="username" column="username" />
+		<result property="sex" column="sex" />
+		<result property="courseId" column="course_id" />
+		<result property="userType" column="user_type" />
+		<collection property="courseList" resultMap="com.peipao.qdl.course.dao.CourseDao.course" />
+	</resultMap>
+
+	<select id="queryTeacherBySchoolId" resultMap="teacher">
+		SELECT t1.user_id, t1.username, t1.nick_name, t1.mobile, t1.sex, t1.user_type, t2.name FROM running.t_user t1
+        left JOIN  running.t_course t2 ON t1.user_id = t2.user_id AND t2.`status`=1
+        WHERE t1.user_id in
+        (select t.user_id from (select * from running.t_user where status = 1 AND school_id = #{schoolId} and (user_type = 2 OR user_type = 3) order by user_id desc limit #{from},#{num} ) t )
+        ORDER BY t1.user_id DESC
+	</select>
+
+	<select id="getTeacherInfoById" resultMap="teacher">
+		SELECT t1.user_id, t1.username, t1.nick_name, t1.mobile, t1.sex, t1.user_type, t2.name FROM running.t_user t1
+        left JOIN  running.t_course t2 ON t1.user_id = t2.user_id AND t2.`status`=1
+        WHERE t1.user_id =#{userId}
+	</select>
+
+	<select id="queryTeacherBySchoolIdCount" resultType="java.lang.Long">
+		SELECT count(*) FROM (
+		SELECT * FROM running.t_user t1
+	    WHERE t1.school_id = #{schoolId}  AND t1.status = 1 and (t1.user_type = 2 OR t1.user_type = 3) ) tt
+	</select>
+
+	<select id="queryStudentInfo" resultType="map">
+		SELECT t1.username, t2.name,t3.semester_year semesterYear, t3.semester_type semesterType, t1.image_url imageURL
+		FROM running.t_user t1
+		LEFT JOIN running.t_course t2 ON t1.course_id = t2.course_id
+			LEFT JOIN running.t_semester t3 ON t3.semester_id = #{semesterId}
+		WHERE t1.user_id = #{userId} AND t1.status = 1
+	</select>
+
+	<select id="queryStudentInfoById" resultType="map">
+		SELECT t1.username, t2.name, t2.course_id courseId, t1.mobile, t1.sex, t1.admission, t1.classname, t1.image_url imageURL
+		FROM running.t_user t1
+		LEFT JOIN running.t_course t2 ON t1.course_id = t2.course_id
+		WHERE t1.user_id = #{userId} AND t1.status = 1
+	</select>
+
+	<select id="queryStudentByUsernameOrStudentNO" resultType="map">
+		SELECT t1.user_id `key`, t1.user_id userId, t1.username, t1.student_no studentNO, t1.mobile, t1.classname, t2.name FROM running.t_user t1
+		LEFT JOIN running.t_course t2 ON t1.course_id = t2.course_id
+		WHERE (t1.username like concat(concat('%',#{value}),'%') OR t1.student_no like concat(concat('%',#{value}),'%'))
+        AND t1.status = 1
+        AND t1.school_id=#{schoolId}
+        LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryStudentByUsernameOrStudentNOCount" resultType="java.lang.Long">
+		select count(*) from (
+            SELECT t1.user_id userId, t1.username, t1.student_no studentNO, t1.mobile, t1.classname FROM running.t_user t1
+            WHERE (t1.username like concat('%',#{value},'%') OR t1.student_no like concat('%',#{value},'%'))
+            AND t1.status = 1
+            AND t1.school_id=#{schoolId}
+        ) t
+	</select>
+
+	<select id="checkStudentRegister" resultType="java.lang.Integer">
+		SELECT count(1) FROM running.t_user WHERE student_no = #{studentNO} AND school_id =#{schoolId}
+	</select>
+
+	<select id="queryStudentList" resultType="map">
+		SELECT t1.user_id `key`, t1.user_id userId, t1.username, t1.mobile, t1.sex, t1.create_time createTime, t1.classname, t1.student_no studentNO, t2.name FROM running.t_user t1
+			LEFT JOIN  running.t_course t2 ON t1.course_id = t2.course_id AND t2.status = 1
+		WHERE t1.school_id = #{schoolId} AND t1.user_type = 1 AND t1.status = 1 ORDER BY t1.user_id DESC LIMIT #{from},#{num}
+	</select>
+
+	<select id="queryStudentListCount" resultType="java.lang.Long">
+		SELECT count(*) FROM (
+		SELECT t1.user_id `key`, t1.user_id userId, t1.username, t1.mobile, t1.sex, t1.create_time createTime, t1.classname FROM running.t_user t1
+		WHERE t1.school_id = #{schoolId} AND t1.user_type = 1 AND t1.status = 1 )t
+	</select>
+	
+	<select id="queryUserInfoWithSchoolName" resultType="map">
+		SELECT t1.user_id userId, t1.image_url imageURL, t1.username, t1.sex, t2.name, @value:=0 `value`, @rank:=999 `rank`
+		FROM running.t_user t1
+		LEFT JOIN running.t_school t2 ON t1.school_id = t2.school_id
+		WHERE t1.status = 1 AND t1.user_id = #{userId}
+	</select>
+
+	<select id="queryOfficialUserList" resultType="map">
+		SELECT user_id `key`, user_id userId, nick_name nickname, username, mobile, sex, course_id courseId
+		FROM running.t_user
+		WHERE status = 1 AND user_type = 4
+	</select>
+
+	<select id="queryOfficialUserListCount" resultType="java.lang.Long">
+		SELECT count(*) courseId
+		FROM running.t_user
+		WHERE status = 1 AND user_type = 4
+	</select>
+
+
+	<update id="updateUserLevel">
+		update running.t_user set level_id = #{levelId} where user_id = #{userId}
+	</update>
+
+	<select id="queryUnselectCourseStudentCount" resultType="java.lang.Long">
+		SELECT count(user_id) FROM running.t_user WHERE school_id = #{schoolId} and user_type = 1 and course_id is NULL AND status = 1
+	</select>
+
+
+	<select id="getUserInfoForDiscover" resultType="map">
+		SELECT t1.user_id userId, t1.image_url userImg, t1.username, t1.nick_name as nickName, t1.sex, t2.school_id as schoolId, t2.name as schoolName
+        FROM running.t_user t1
+        LEFT JOIN running.t_school t2 ON t1.school_id = t2.school_id
+        WHERE t1.status = 1 AND t1.user_id = #{userId}
+	</select>
+
+
+	<select id="getUserInfoForDiscoverPc" resultType="map">
+		SELECT t1.user_id userId, t1.username, t1.student_no as studentNo, t2.`name` as schoolName
+		FROM running.t_user t1
+		LEFT JOIN running.t_school t2 ON t1.school_id = t2.school_id
+		WHERE t1.status = 1 AND t1.user_id = #{userId}
+	</select>
+
+	<select id="getSchoolIdByUserId" resultType="Long">
+		SELECT t.school_id
+		FROM running.t_user t
+		WHERE t.status = 1 AND t.user_id = #{userId}
+	</select>
+
+	<select id="getSchoolIdUserTypeByUserId" resultType="map">
+		SELECT t.school_id as schoolId, t.user_type as userType
+		FROM running.t_user t
+		WHERE t.status = 1 AND t.user_id = #{userId}
+	</select>
+
+	<select id="countByCourseId" resultType="java.lang.Integer">
+		select count(*)
+		from running.t_user
+		WHERE course_id = #{courseId};
+	</select>
+
+
+	<update id="updateUserCourseToNull">
+		update running.t_user set course_id = null where course_id = #{courseId} and status=1
+	</update>
+
+    <select id="getUserIdsByCourseId" resultType="map">
+        select user_id as userId from running.t_user where course_id = #{courseId} and status=1
+    </select>
+
+
+</mapper>

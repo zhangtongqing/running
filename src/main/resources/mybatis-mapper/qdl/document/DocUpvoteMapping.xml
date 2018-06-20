@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocUpvoteMapping-->
+<!--* 功能描述：DocUpvoteMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章点赞-->
+<mapper namespace="com.peipao.qdl.document.dao.DocUpvoteDao">
+	<resultMap type="com.peipao.qdl.document.model.DocUpvote" id="docUpvote">
+		<id property="upvoteId" column="upvote_id" /><!--主键ID-->
+		<result property="docId" column="doc_id" /><!--文章主键ID-->
+		<result property="userId" column="user_id" /><!--评论用户ID-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+	</resultMap>
+
+	<select id="getUpvoteDocIdListByUserId" resultType="map">
+		SELECT doc_id AS docId
+		FROM running.t_doc_upvote
+		WHERE user_id=#{userId}
+		<if test="docIdList != null">
+			<foreach collection="docIdList" item="item" index="index" open="AND (" close=")" separator="OR">
+				doc_id=#{item.docId}
+			</foreach>
+		</if>
+	</select>
+
+	<insert id="insertDocUpvote">
+		INSERT INTO running.t_doc_upvote( doc_id,user_id,create_time ) VALUES ( #{docId},#{userId},#{createTime} );
+	</insert>
+
+	<delete id="deleteDocUpvote">
+		DELETE FROM running.t_doc_upvote WHERE doc_id = #{docId} AND user_id = #{userId};
+	</delete>
+
+	<sql id="column_docUpvote_list">
+		t1.upvote_id as `key`,
+		t1.upvote_id as upvoteId,
+		t1.user_id as userId,
+		t2.username as userName,
+		t1.create_time as createTime
+	</sql>
+
+	<select id="selectUpvoteList" resultType="map">
+		SELECT <include refid="column_docUpvote_list" />
+		FROM running.t_doc_upvote t1, running.t_user t2
+		WHERE  t1.doc_id=#{docId} AND t1.user_id = t2.user_id
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="getDocUpvoteListTotal" resultType="java.lang.Long">
+		SELECT count(upvote_id) AS total FROM running.t_doc_upvote WHERE doc_id=#{docId}
+	</select>
+
+</mapper>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.rule.dao.RunningRuleNodeDao">
+	<resultMap type="com.peipao.qdl.rule.model.RunningRuleNode" id="runningRuleNode">
+		<id property="nodeId" column="node_d" /><!--主键ID-->
+		<result property="runningRuleId" column="running_rule_id" /><!--规则主表ID-->
+		<result property="latitude" column="latitude" /><!--纬度值-->
+		<result property="longitude" column="longitude" /><!--经度值-->
+		<result property="nodeName" column="node_name" /><!--点名称-->
+		<result property="sort" column="sort" /><!--排序-->
+		<result property="type" column="type" /><!--跑步类型-->
+	</resultMap>
+
+	<sql id="column_all" >
+		node_id as nodeId,
+		running_rule_id as runningRuleId,
+		latitude,
+		longitude,
+		node_name as nodeName,
+		sort,
+		type
+	</sql>
+
+	<sql id="column_insert" >
+		running_rule_id,
+		latitude,
+		longitude,
+		node_name,
+		sort,
+		type
+	</sql>
+
+	<select id="getByRunningRuleId" resultMap="runningRuleNode">
+		SELECT <include refid="column_all" /> FROM running.t_running_rule_node
+		WHERE running_rule_id = #{runningRuleId}
+		AND type=#{type}
+	</select>
+
+	<insert id="insertRunningRuleNodeByBatch" useGeneratedKeys="true" keyColumn="node_id">
+		insert into running.t_running_rule_node(
+			<include refid="column_insert"/>
+		)values
+			<foreach collection="runningRuleNodeList" item="item" index="index" separator=",">
+			(
+				#{runningRuleId},
+				#{item.latitude},
+				#{item.longitude},
+				#{item.nodeName},
+				#{item.sort},
+				<choose>
+					<when test="item.type != null">
+						#{item.type}
+					</when>
+					<otherwise>
+						0
+					</otherwise>
+				</choose>
+			)
+			</foreach>
+	</insert>
+
+
+	<delete id="deleteRunningRuleNodeByBatch">
+		delete from running.t_running_rule_node where node_id in (
+			<foreach collection="nodeList" item="node" separator=",">
+				#{node.nodeId}
+			</foreach>
+		)
+	</delete>
+</mapper>

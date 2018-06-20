@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocBrowseMapping-->
+<!--* 功能描述：DocBrowseMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章浏览信息-->
+<mapper namespace="com.peipao.qdl.document.dao.DocBrowseDao">
+	<resultMap type="com.peipao.qdl.document.model.DocBrowse" id="docBrowse">
+		<id property="browseId" column="browse_id" /><!--主键ID-->
+		<result property="docId" column="doc_id" /><!--文章主键ID-->
+		<result property="userId" column="user_id" /><!--浏览用户ID-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="logicDelete" column="logic_delete" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+	</resultMap>
+
+	<sql id="column_docBrowse_list">
+		t1.browse_id as `key`,
+		t1.browse_id as browseId,
+		t1.user_id as userId,
+		t2.username as userName,
+		t1.create_time as createTime
+	</sql>
+
+	<select id="selectBrowseList" resultType="map">
+		SELECT <include refid="column_docBrowse_list" />
+		FROM running.t_doc_browse t1, running.t_user t2
+		WHERE  t1.doc_id=#{docId} AND t1.logic_delete=0 AND t1.user_id = t2.user_id
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="getDocBrowseListTotal" resultType="java.lang.Long">
+		SELECT count(browse_id) AS total FROM running.t_doc_browse WHERE doc_id=#{docId} AND logic_delete=0
+	</select>
+
+	<update id="updateDocBrowseLogicDelete">
+		UPDATE running.t_doc_browse SET logic_delete = #{LogicDelete} WHERE doc_id = #{docId}
+	</update>
+
+	<insert id="insertDocBrowse">
+		INSERT INTO running.t_doc_browse( doc_id,user_id,create_time )
+		VALUES ( #{docId},#{userId},#{createTime} );
+	</insert>
+</mapper>

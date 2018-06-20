@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.rule.dao.RunningRuleImgDao">
+
+	<resultMap type="com.peipao.qdl.rule.model.RunningRuleImg" id="runningRuleImg">
+		<id property="runningRuleImgId" column="running_rule_img_id" /><!--主键ID-->
+		<result property="runningRuleId" column="running_rule_id" /><!--分类跑步规则ID-->
+		<result property="imgPath" column="img_path" /><!--图片路径-->
+		<result property="createTime" column="create_time" /><!--本条规则记录创建时间-->
+	</resultMap>
+
+	<sql id="column_all" >
+		running_rule_img_id as runningRuleImgId,
+		running_rule_id as runningRuleId,
+		img_path as imgPath,
+		create_time as createTime
+	</sql>
+
+	<sql id="column_insert" >
+		running_rule_id,
+		img_path
+	</sql>
+
+	<select id="getRunningRuleImgByRuleId" resultMap="runningRuleImg">
+		SELECT * from running.t_running_rule_img t where t.running_rule_id=#{runningRuleId}
+	</select>
+
+    <delete id="deleteRunningRuleImgByRunningRuleId">
+        delete from running.t_running_rule_img where running_rule_id = #{runningRuleId}
+    </delete>
+
+
+    <insert id="insertRunningRuleImgByBatch" useGeneratedKeys="true" keyColumn="running_rule_img_id">
+        insert into running.t_running_rule_img(
+          <include refid="column_insert"/>
+        ) values
+        <foreach collection="runningRuleImgList" item="item" index="index" separator=",">
+            (
+              #{runningRuleId},
+              #{item.imgPath}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

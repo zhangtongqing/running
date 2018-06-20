@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--发现-动力圈-->
+<mapper namespace="com.peipao.qdl.discover.dao.DiscoverDao">
+	<resultMap type="com.peipao.qdl.discover.model.Discover" id="discover">
+		<id property="discoverId" column="discover_id" /><!--主键ID-->
+		<result property="discoverContent" column="discover_content" /><!--文本内容-->
+		<result property="upvoteAmount" column="upvote_amount" /><!--点赞量-->
+		<result property="commentAmount" column="comment_amount" /><!--评论数-->
+		<result property="reportAmount" column="report_amount" /><!--举报次数-->
+		<result property="location" column="location" /><!--位置-->
+		<result property="createUserId" column="create_user_id" /><!--创建用户ID-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="updateTime" column="update_time" /><!--更新时间-->
+		<result property="hotControl" column="hot_control" /><!--是否控制HOT，默认0=不控制，1=被控制-->
+		<result property="isHot" column="is_hot" /><!--是否HOT，默认0=否-->
+		<result property="logicDelete" column="logic_delete" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+	</resultMap>
+
+	<sql id="column_insert" >
+        discover_content,
+        upvote_amount,
+        comment_amount,
+        report_amount,
+        location,
+        create_user_id,
+        create_time,
+        update_time,
+        hot_control,
+        is_hot,
+        logic_delete
+	</sql>
+
+    <insert id="insertDiscover" useGeneratedKeys="true" keyProperty="discover.discoverId" parameterType="com.peipao.qdl.discover.model.Discover">
+        insert into running.t_discover(
+          <include refid="column_insert" />
+        )
+        values (
+            #{discover.discoverContent},
+            #{discover.upvoteAmount},
+            #{discover.commentAmount},
+            #{discover.reportAmount},
+            #{discover.location},
+            #{discover.createUserId},
+            #{discover.createTime},
+            #{discover.updateTime},
+            #{discover.hotControl},
+            #{discover.isHot},
+            #{discover.logicDelete}
+        );
+    </insert>
+
+    <!-- 查询动力圈列表 （is_hot热门,如果参数存在就是查询热门列表,不存在就是按时间最新倒序）-->
+    <select id="getDiscoverList" resultType="java.util.Map">
+        SELECT
+            td.discover_id as discoverId,
+            td.create_user_id as userId,
+            ifnull(td.location, '') as location,
+            td.discover_content as discoverContent,
+            td.upvote_amount as upvoteAmount,
+            td.comment_amount as commentAmount,
+            td.create_time as createTime,
+            if(td.create_user_id = ${userId} , ${trueVal}, ${falseVal}) as delPower
+        from running.t_discover td
+        where 1=1
+        <if test="isHot != null">
+          and td.is_hot=#{isHot}
+        </if>
+        and td.logic_delete=#{logicDelete}
+        ORDER BY td.discover_id desc
+    </select>
+
+    <!-- 查询同校动力圈分页列表 -->
+    <select id="getDiscoverSchoolList" resultType="java.util.Map">
+
+        SELECT
+            td.discover_id as discoverId,
+            td.create_user_id as userId,
+            ifnull(td.location, '') as location,
+            td.discover_content as discoverContent,
+            td.is_hot as isHot,
+            td.upvote_amount as upvoteAmount,
+            td.comment_amount as commentAmount,
+            td.create_time as createTime,
+            if(td.create_user_id = ${userId}, ${trueVal}, ${falseVal}) as delPower
+        from (
+             SELECT
+                 tu.user_id,
+                 tu.school_id
+             from running.t_user tu
+             where tu.school_id=#{schoolId} and tu.`status`=1
+         ) u
+        LEFT JOIN running.t_discover td on u.user_id = td.create_user_id
+        where td.logic_delete=#{logicDelete}
+        ORDER BY td.discover_id desc
+    </select>
+
+    <!-- 根据ID查询动力圈 -->
+    <select id="getDiscoverById" resultMap="discover">
+        select * from running.t_discover where discover_id = #{discoverId}
+    </select>
+
+
+    <!-- 4.2 查询动力圈列表总条数 -->
+    <select id="queryDiscoverListTotal" resultType="java.lang.Long">
+        SELECT count(*) from (
+            SELECT
+                td.discover_id as discoverId,
+                td.create_user_id as userId,
+                ifnull(td.location, '') as location,
+                td.discover_content as discoverContent,
+                td.is_hot as isHot,
+                td.upvote_amount as upvoteAmount,
+                td.comment_amount as commentAmount,
+                td.report_amount as reportAmount,
+                td.create_time as createTime
+            from running.t_discover td
+        ) t
+        where 1=1
+        <if test="isHot != null">
+            and t.isHot = #{isHot}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            <![CDATA[and t.createTime >= #{startTime}]]>
+        </if>
+        <if test="endTime != null and endTime != ''">
+            <![CDATA[and t.createTime <= #{endTime}]]>
+        </if>
+        <if test="queryString != null and queryString != ''">
+            and t.discoverContent like CONCAT('%',#{queryString},'%')
+        </if>
+    </select>
+
+	<!-- 4.2 查询动力圈列表 -->
+    <select id="queryDiscoverList" resultType="java.util.Map">
+        SELECT t.*, tu.username as username from (
+            SELECT
+                td.discover_id as discoverId,
+                td.create_user_id as userId,
+                ifnull(td.location, '') as location,
+                td.discover_content as discoverContent,
+                td.is_hot as isHot,
+                td.hot_control as hotControl,
+                td.upvote_amount as upvoteAmount,
+                td.comment_amount as commentAmount,
+                td.report_amount as reportAmount,
+                td.create_time as createTime,
+                td.logic_delete as logicDelete
+            from running.t_discover td
+            where 1=1
+            <if test="isHot != null">
+                and td.is_hot = #{isHot}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                <![CDATA[and td.create_time >= #{startTime}]]>
+            </if>
+            <if test="endTime != null and endTime != ''">
+                <![CDATA[and td.create_time <= #{endTime}]]>
+            </if>
+            <if test="queryString != null and queryString != ''">
+                and td.discover_content like CONCAT('%',#{queryString},'%')
+            </if>
+            <if test="sortName != null and sortType != null">
+                order by td.${sortName} ${sortType}
+            </if>
+            LIMIT #{from},#{pagesize}
+        ) t
+        LEFT JOIN running.t_user tu on t.userId = tu.user_id
+    </select>
+
+
+    <select id="getDiscoverInfoById" resultType="java.util.Map">
+        SELECT
+            td.discover_id as discoverId,
+            td.create_user_id as userId,
+            ifnull(td.location, '') as location,
+            td.discover_content as discoverContent,
+            td.upvote_amount as upvoteAmount,
+            td.comment_amount as commentAmount,
+            td.report_amount as reportAmount,
+            td.create_time as createTime,
+            td.logic_delete as logicDelete,
+            td.is_hot as isHot,
+            td.hot_control as hotControl
+        from running.t_discover td
+        where td.discover_id=#{discoverId}
+    </select>
+
+
+    <!--更新动力圈点赞数-->
+    <update id="updateUpvoteAmountByDiscoverId">
+        update running.t_discover
+        SET upvote_amount = upvote_amount + #{upvoteAmount}
+        where discover_id = #{discoverId}
+        <if test="upvoteAmount &lt; 0">
+            and upvote_amount > 0
+        </if>
+    </update>
+
+    <!--更新动力圈评论数-->
+    <update id="updateCommentAmountByDiscoverId">
+        update running.t_discover
+        SET comment_amount = comment_amount + #{commentAmount}
+        where discover_id = #{discoverId}
+        <if test="commentAmount &lt; 0">
+            and comment_amount > 0
+        </if>
+    </update>
+
+    <!--更新动力圈举报数-->
+    <update id="updateReportAmountByDiscoverId">
+        update running.t_discover
+        SET report_amount = report_amount + #{reportAmount}
+        where discover_id = #{discoverId}
+        <if test="reportAmount &lt; 0">
+            and report_amount > 0
+        </if>
+    </update>
+
+    <update id="updateStatusByDiscoverId">
+        update running.t_discover t
+        <set>
+            <if test="hotControl != null ">
+                t.hot_control = #{hotControl},
+            </if>
+            <if test="isHot != null ">
+                t.is_hot = #{isHot},
+            </if>
+            <if test="logicDelete != null ">
+                t.logic_delete = #{logicDelete},
+            </if>
+            <if test="updateTime != null ">
+                t.update_time = #{updateTime},
+            </if>
+        </set>
+        where discover_id = #{discoverId}
+    </update>
+
+    <!-- 更新某条动力圈热门状态 -->
+    <update id="updatediscoverHot" parameterType="Map">
+        update running.t_discover
+        <set>
+            <if test="isHot != null">
+                is_hot = #{isHot},
+            </if>
+        </set>
+        where discover_id = #{discoverId}
+    </update>
+
+    <!-- 更新动力圈禁上热门状态 -->
+    <update id="updatediscoverHotControl" parameterType="Map">
+        update running.t_discover
+        <set>
+            <if test="hotControl != null">
+                hot_control = #{hotControl},
+            </if>
+        </set>
+        where discover_id = #{discoverId}
+    </update>
+
+    <!-- 更新动力圈信息删除状态 -->
+    <update id="updatediscoverDel" parameterType="Map">
+        update running.t_discover
+        <set>
+            <if test="logicDelete != null">
+                logic_delete = #{logicDelete}
+            </if>
+        </set>
+        where discover_id = #{discoverId}
+    </update>
+
+</mapper>

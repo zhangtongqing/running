@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocCommentMapping-->
+<!--* 功能描述：DocCommentMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章评论-->
+<mapper namespace="com.peipao.qdl.document.dao.DocCommentDao">
+	<resultMap type="com.peipao.qdl.document.model.DocComment" id="docComment">
+		<id property="commentId" column="comment_id" /><!--主键ID-->
+		<result property="docId" column="doc_id" /><!--文章主键ID-->
+		<result property="userId" column="user_id" /><!--评论用户ID-->
+		<result property="commentContent" column="comment_content" /><!--评论内容-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="logicDelete" column="logic_delete" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+	</resultMap>
+
+	<select id="getUserExtraInfoByUserId" resultType="map">
+		SELECT t1.username AS userName,t1.image_url AS imageUrl,t2.name AS schoolName
+		FROM running.t_user t1,running.t_school t2
+		WHERE t1.user_id=#{userId} AND t1.school_id=t2.school_id
+		LIMIT 0,1
+	</select>
+
+	<insert id="insertDocComment" parameterType="com.peipao.qdl.document.model.DocComment"  keyProperty="docComment.commentId" useGeneratedKeys="true">
+		INSERT INTO running.t_doc_comment( doc_id,user_id,comment_content,create_time )
+		VALUES ( #{docComment.docId},#{docComment.userId},#{docComment.commentContent},#{docComment.createTime} );
+	</insert>
+
+	<select id="getDocIdByCommentId" resultType="Long">
+		SELECT doc_id FROM running.t_doc_comment WHERE comment_id = #{commentId};
+	</select>
+
+	<!--<delete id="deleteDocComment">-->
+		<!--DELETE FROM running.t_doc_comment-->
+		<!--<trim prefix="WHERE" prefixOverrides="AND|OR">-->
+			<!--AND comment_id = #{commentId}-->
+			<!--<if test="userId != null">-->
+				<!--AND user_id = #{userId}-->
+			<!--</if>-->
+		<!--</trim>-->
+	<!--</delete>-->
+	<update id="updateDocCommentLogicDeleteById">
+		UPDATE running.t_doc_comment
+		SET logic_delete = #{LogicDelete}
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND comment_id = #{commentId}
+			<if test="userId != null">
+				AND user_id = #{userId}
+			</if>
+		</trim>
+	</update>
+
+	<sql id="column_getdocComment_list">
+		t1.username AS userName,
+		t1.image_url AS imageUrl,
+		t2.name AS schoolName,
+		t3.comment_id AS commentId,
+		t3.comment_content AS commentContent,
+		t3.create_time AS createTime
+	</sql>
+
+	<select id="getCommentList" resultType="map">
+		SELECT <include refid="column_getdocComment_list" />
+		FROM running.t_user t1,running.t_school t2,running.t_doc_comment t3
+		WHERE t3.doc_id=#{docId} AND t3.logic_delete=0 AND t1.user_id=t3.user_id AND t1.school_id=t2.school_id
+		ORDER BY t3.comment_id DESC
+		LIMIT #{from},#{num}
+	</select>
+
+	<sql id="column_docComment_list">
+		t1.comment_id as `key`,
+		t1.comment_id as commentId,
+		t1.user_id as userId,
+		t2.username as userName,
+		t1.comment_content as commentContent,
+		t1.create_time as commentTime
+	</sql>
+
+	<select id="getDocCommentListTotal" resultType="java.lang.Long">
+		SELECT count(comment_id) AS total FROM running.t_doc_comment WHERE doc_id=#{docId} AND logic_delete=0
+	</select>
+
+	<select id="selectCommentList" resultType="map">
+		SELECT <include refid="column_docComment_list" />
+		FROM running.t_doc_comment t1, running.t_user t2
+		WHERE t1.doc_id=#{docId} AND t1.logic_delete=0 AND t1.user_id = t2.user_id
+		LIMIT #{from},#{num}
+	</select>
+
+	<update id="updateDocCommentLogicDelete">
+		UPDATE running.t_doc_comment SET logic_delete = #{LogicDelete} WHERE doc_id = #{docId}
+	</update>
+</mapper>

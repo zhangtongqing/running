@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.running.dao.RunningNodeDao">
+
+	<resultMap type="com.peipao.qdl.running.model.RunningNode" id="runningNode">
+		<id property="nodeId" column="node_id" /><!--主键ID-->
+		<result property="runningRecordId" column="running_record_id" />
+		<result property="userId" column="user_id" />
+		<result property="time" column="time" />
+		<result property="duration" column="duration" />
+		<result property="length" column="length" />
+		<result property="calorieCount" column="calorie_count" />
+		<result property="locationInfo" column="location_info" />
+		<result property="locationPrecision" column="location_precision" />
+		<result property="isKilometerNode" column="is_kilometer_node" />
+		<result property="color" column="color" />
+		<result property="latitude" column="latitude" />
+		<result property="longitude" column="longitude" />
+		<result property="isEffective" column="is_effective" />
+		<result property="pauseStatus" column="pause_status" />
+		<result property="equallySpeed" column="equally_speed" />
+		<result property="equallyPace" column="equally_pace" />
+		<result property="momentSpeed" column="moment_speed" />
+		<result property="sort" column="sort" />
+	</resultMap>
+
+	<sql id="column_list_all" >
+		node_id as nodeId,
+		running_record_id as runningRecordId,
+		user_id as userId,
+		time,
+		duration,
+		length,
+		calorie_count as calorieCount,
+		location_info as locationInfo,
+		location_precision as locationPrecision,
+		is_kilometer_node as isKilometerNode,
+		color,
+		latitude,
+		longitude,
+		is_effective as isEffective,
+		pause_status as pauseStatus,
+		equally_speed as equallySpeed,
+		equally_pace as equallyPace,
+		moment_speed as momentSpeed,
+		sort
+	</sql>
+
+	<sql id="column_list_insert" >
+		node_id,
+		running_record_id,
+		user_id,
+		time,
+		duration,
+		length,
+		calorie_count,
+		location_info,
+		location_precision,
+		is_kilometer_node,
+		color,
+		latitude,
+		longitude,
+		is_effective,
+		pause_status,
+		equally_speed,
+		equally_pace,
+		moment_speed,
+		sort
+	</sql>
+
+	<select id="getByRunningRecordId" resultType="map">
+		SELECT <include refid="column_list_all" /> FROM running.`t_running_node${tableDay}` WHERE running_record_id = #{runningRecordId} order by sort asc
+	</select>
+
+	<insert id="insertRunningNodeByBatch" parameterType="java.util.List" >
+		insert into running.`t_running_node${tableDay}`(
+		    <include refid="column_list_insert"/>
+		)values
+		<foreach collection="runningNodeList" item="item" index="index" separator=",">
+			(
+				#{item.nodeId},
+				#{item.runningRecordId},
+				#{item.userId},
+				#{item.time},
+				#{item.duration},
+				#{item.length},
+				#{item.calorieCount},
+				#{item.locationInfo},
+				#{item.locationPrecision},
+				#{item.isKilometerNode},
+				#{item.color},
+				#{item.latitude},
+				#{item.longitude},
+				#{item.isEffective},
+				#{item.pauseStatus},
+				#{item.equallySpeed},
+				#{item.equallyPace},
+				#{item.momentSpeed},
+				#{item.sort}
+			)
+		</foreach>
+	</insert>
+
+	<update id="updateRunningNodeListById" parameterType="java.util.List" >
+        <foreach collection="runningNodeList" item="runningNode" index="index" separator=";" close=";">
+            update `t_running_node${tableDay}`
+            <set>
+                <if test="runningNode.runningRecordId != null and runningNode.runningRecordId != ''" >
+                    running_record_id = #{runningNode.runningRecordId},
+                </if>
+                <if test="runningNode.userId != null and runningNode.userId != ''" >
+                    user_id = #{runningNode.userId},
+                </if>
+                <if test="runningNode.time != null and runningNode.time != ''" >
+                    time = #{runningNode.time},
+                </if>
+                <if test="runningNode.duration != null and runningNode.duration != ''" >
+                    duration = #{runningNode.duration},
+                </if>
+                <if test="runningNode.length != null and runningNode.length != ''" >
+                    length = #{runningNode.length},
+                </if>
+                <if test="runningNode.calorieCount != null and runningNode.calorieCount != ''" >
+                    calorie_count = #{runningNode.calorieCount},
+                </if>
+                <if test="runningNode.locationInfo != null and runningNode.locationInfo != ''" >
+                    location_info = #{runningNode.locationInfo},
+                </if>
+                <if test="runningNode.locationPrecision != null and runningNode.locationPrecision != ''" >
+                    location_precision = #{runningNode.locationPrecision},
+                </if>
+                <if test="runningNode.isKilometerNode != null and runningNode.isKilometerNode != ''" >
+                    is_kilometer_node = #{runningNode.isKilometerNode},
+                </if>
+                <if test="runningNode.color != null and runningNode.color != ''" >
+                    color = #{runningNode.color},
+                </if>
+                <if test="runningNode.latitude != null and runningNode.latitude != ''" >
+                    latitude = #{runningNode.latitude},
+                </if>
+                <if test="runningNode.longitude != null and runningNode.longitude != ''" >
+                    longitude = #{runningNode.longitude},
+                </if>
+                <if test="runningNode.isEffective != null and runningNode.isEffective != ''" >
+                    is_effective = #{runningNode.isEffective},
+                </if>
+                <if test="runningNode.pauseStatus != null and runningNode.pauseStatus != ''" >
+                    pause_status = #{runningNode.pauseStatus},
+                </if>
+                <if test="runningNode.equallySpeed != null and runningNode.equallySpeed != ''" >
+                    equally_speed = #{runningNode.equallySpeed},
+                </if>
+                <if test="runningNode.equallyPace != null and runningNode.equallyPace != ''" >
+                    equally_pace = #{runningNode.equallyPace},
+                </if>
+                <if test="runningNode.momentSpeed != null and runningNode.momentSpeed != ''" >
+                    moment_speed = #{runningNode.momentSpeed},
+                </if>
+				<if test="runningNode.sort != null and runningNode.sort != ''" >
+					sort = #{runningNode.sort},
+				</if>
+            </set>
+            where node_id = #{runningNode.nodeId}
+        </foreach>
+	</update>
+
+	<update id="updateRunningNodeById" parameterType="com.peipao.qdl.running.model.RunningNode">
+			update `t_running_node${tableDay}`
+			<set>
+				<if test="runningNode.runningRecordId != null and runningNode.runningRecordId != ''" >
+					running_record_id = #{runningNode.runningRecordId},
+				</if>
+				<if test="runningNode.userId != null and runningNode.userId != ''" >
+					user_id = #{runningNode.userId},
+				</if>
+				<if test="runningNode.time != null and runningNode.time != ''" >
+					time = #{runningNode.time},
+				</if>
+				<if test="runningNode.duration != null and runningNode.duration != ''" >
+					duration = #{runningNode.duration},
+				</if>
+				<if test="runningNode.length != null and runningNode.length != ''" >
+					length = #{runningNode.length},
+				</if>
+				<if test="runningNode.calorieCount != null and runningNode.calorieCount != ''" >
+					calorie_count = #{runningNode.calorieCount},
+				</if>
+				<if test="runningNode.locationInfo != null and runningNode.locationInfo != ''" >
+					location_info = #{runningNode.locationInfo},
+				</if>
+				<if test="runningNode.locationPrecision != null and runningNode.locationPrecision != ''" >
+					location_precision = #{runningNode.locationPrecision},
+				</if>
+				<if test="runningNode.isKilometerNode != null and runningNode.isKilometerNode != ''" >
+					is_kilometer_node = #{runningNode.isKilometerNode},
+				</if>
+				<if test="runningNode.color != null and runningNode.color != ''" >
+					color = #{runningNode.color},
+				</if>
+				<if test="runningNode.latitude != null and runningNode.latitude != ''" >
+					latitude = #{runningNode.latitude},
+				</if>
+				<if test="runningNode.longitude != null and runningNode.longitude != ''" >
+					longitude = #{runningNode.longitude},
+				</if>
+				<if test="runningNode.isEffective != null and runningNode.isEffective != ''" >
+					is_effective = #{runningNode.isEffective},
+				</if>
+				<if test="runningNode.pauseStatus != null and runningNode.pauseStatus != ''" >
+					pause_status = #{runningNode.pauseStatus},
+				</if>
+				<if test="runningNode.equallySpeed != null and runningNode.equallySpeed != ''" >
+					equally_speed = #{runningNode.equallySpeed},
+				</if>
+				<if test="runningNode.equallyPace != null and runningNode.equallyPace != ''" >
+					equally_pace = #{runningNode.equallyPace},
+				</if>
+				<if test="runningNode.momentSpeed != null and runningNode.momentSpeed != ''" >
+					moment_speed = #{runningNode.momentSpeed},
+				</if>
+				<if test="runningNode.sort != null and runningNode.sort != ''" >
+					sort = #{runningNode.sort},
+				</if>
+			</set>
+			where node_id = #{runningNode.nodeId}
+	</update>
+
+	<update id="createRunningNodeTable" >
+		CREATE TABLE `t_running_node${tableName}` (
+		`node_id` varchar(32) NOT NULL,
+		`running_record_id` varchar(32) DEFAULT NULL,
+		`user_id` int(32) DEFAULT NULL,
+		`time` datetime DEFAULT NULL,
+		`duration` varchar(20) DEFAULT NULL,
+		`length` float DEFAULT NULL,
+		`calorie_count` int(20) DEFAULT NULL,
+		`location_info` varchar(32) DEFAULT NULL,
+		`location_precision` float DEFAULT NULL,
+		`is_kilometer_node` smallint(1) DEFAULT NULL,
+		`color` varchar(20) DEFAULT NULL,
+		`latitude` double DEFAULT NULL,
+		`longitude` double DEFAULT NULL,
+		`is_effective` smallint(1) DEFAULT NULL,
+		`pause_status` smallint(1) DEFAULT NULL,
+		`equally_speed` float DEFAULT NULL,
+		`equally_pace` varchar(20) DEFAULT NULL,
+		`moment_speed` float DEFAULT NULL,
+		`sort` int(10) unsigned DEFAULT NULL,
+		PRIMARY KEY (`node_id`)
+		)
+	</update>
+
+	<select id="checkTableExist" resultType="java.lang.Integer">
+		select count(1) from `INFORMATION_SCHEMA`.`TABLES` where `TABLE_SCHEMA`=#{schemaName} and `TABLE_NAME`=#{tableName}
+	</select>
+
+	<delete id="deleteNodeByRecordId">
+		DELETE FROM `t_running_node${tableDay}` WHERE running_record_id = #{runningRecordId}
+	</delete>
+
+</mapper>

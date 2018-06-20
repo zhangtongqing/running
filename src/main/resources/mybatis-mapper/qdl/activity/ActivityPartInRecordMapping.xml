@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.activity.dao.ActivityPartInRecordDao">
+    <resultMap type="com.peipao.qdl.activity.model.ActivityPartinRecord" id="activityPartinRecord">
+        <id property="activityPartinRecordId" column="activity_partin_record_id" />
+        <result property="activityMemberId" column="activity_member_id" />
+        <result property="signTime" column="sign_time" />
+        <result property="latitude" column="latitude" />
+        <result property="longitude" column="longitude" />
+        <result property="signAddress" column="sign_address" />
+        <result property="rewardScore" column="reward_score" />
+        <result property="rewardDuration" column="reward_duration" />
+        <result property="isEffective" column="is_effective" />
+        <result property="runningRecordId" column="running_record_id" />
+    </resultMap>
+
+
+
+	<insert id="insertActvityPartinRecord">
+		insert into running.t_activity_partin_record (activity_member_id, sign_time, latitude, longitude, sign_address, is_effective, reward_duration, reward_score)
+		values (#{activityMemberId}, #{signTime}, #{latitude}, #{longitude}, #{signAddress}, #{isEffective}, #{rewardDuration}, #{rewardScore});
+	</insert>
+
+	<update id="updateActivityPartinRecord">
+		UPDATE running.t_activity_partin_record
+		<set>
+			<if test="isEffective != null">
+				is_effective = #{isEffective},
+			</if>
+			<if test="rewardScore != null">
+				reward_score = #{rewardScore},
+			</if>
+			<if test="rewardDuration != null">
+				reward_duration = #{rewardDuration},
+			</if>
+			<if test="runningRecordId != null and runningRecordId != ''">
+				running_record_id = #{runningRecordId}
+			</if>
+		</set>
+		WHERE activity_partin_record_id in(select * from (
+		(select activity_partin_record_id from running.t_activity_partin_record
+			where activity_member_id = #{activityMemberId} order by activity_partin_record_id desc limit 1 ) t) )
+	</update>
+
+    <select id="getPartinRecordByRunningRecordId" resultMap="activityPartinRecord">
+        SELECT * FROM running.t_activity_partin_record t
+        WHERE t.running_record_id = #{runningRecordId}
+        and t.is_effective != #{isEffective}
+    </select>
+
+	<select id="getStudentActivityList" resultType="map">
+		SELECT
+            rr.activity_partin_record_id as `key`,
+            tay.`name` AS activityName,
+            @type := 0 AS type,
+			ifnull(rr.sign_time, '') AS signTime,
+			ifnull(rr.reward_score, 0) AS score
+		FROM (
+			SELECT r.*,tt.activity_id FROM running.t_activity_partin_record r
+			LEFT JOIN (
+				SELECT tm.activity_member_id,tm.activity_id FROM running.t_activity_member tm WHERE tm.user_id=#{userId}
+				AND tm.activity_id IN (
+					SELECT ta.activity_id FROM running.t_activity ta WHERE ta.type=#{type}
+				)
+			) tt ON r.activity_member_id=tt.activity_member_id
+		) rr
+		LEFT JOIN running.t_activity tay ON rr.activity_id=tay.activity_id
+		WHERE rr.activity_id IS NOT NULL
+	</select>
+
+</mapper>

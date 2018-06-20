@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.running.dao.RunningRecordDao">
+
+	<resultMap type="com.peipao.qdl.running.model.RunningRecord" id="runningRecord">
+		<id property="runningRecordId" column="running_record_id" /><!--主键ID-->
+		<result property="runningId" column="running_id" /><!--发布的跑步的ID,默认的跑步则为null-->
+		<result property="activityId" column="activity_id" /><!--活动ID-->
+		<result property="semesterId" column="semester_id" /><!--学期Id-->
+		<result property="calorieCount" column="calorie_count" /><!--消耗卡路里值-->
+		<result property="kilometeorCount" column="kilometeor_count" /><!--里程值-->
+		<result property="validKilometeorCount" column="valid_kilometeor_count" /><!--有效跑步里程值-->
+		<result property="duration" column="duration" /><!--时长-->
+		<result property="equallySpeed" column="equally_speed" /><!--平均配速-->
+		<result property="equallyPace" column="equally_pace" /><!--平均时速-->
+		<result property="highSpeed" column="high_speed" /><!--最高时速-->
+		<result property="lowSpeed" column="low_speed" /><!--最低时速-->
+		<result property="userId" column="user_id" /><!--userId-->
+		<result property="startDate" column="start_date" /><!--开始时间-->
+		<result property="endDate" column="end_date" /><!--结束时间-->
+		<result property="isEffective" column="is_effective" /><!--是否有效-->
+		<result property="enabled" column="enabled" />
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="type" column="type" /><!--跑步类型 1,晨跑,2,趣味,3,随机,4,自由,5,定向,6,创意-->
+		<result property="runningScore" column="running_score" /><!--跑步得分-->
+		<result property="durationStr" column="duration_str" /><!--时长字符-->
+		<result property="phoneStr" column="phone_str" /><!--手机简要信息-->
+		<result property="userToken" column="user_token" /><!--Android 有用-->
+		<result property="thumbUrl" column="thumb_url" /><!--缩略图图片地址  上传成功才会更新-->
+		<result property="status" column="status" /><!--记录状态  -1 = 申诉中-->
+		<result property="nodeStatus" column="node_status" /><!--跑步记录文件状态-->
+		<result property="nodeTime" column="node_time" /><!--跑步记录文件上传时间,格式 yyyy/mm/dd-->
+		<result property="invalidReason" column="invalid_reason" /><!--无效的运动原因-->
+		<result property="appealTime" column="appeal_time" /><!--申诉时间-->
+		<result property="appealUserId" column="appeal_user_id" /><!--申诉处理人ID-->
+	</resultMap>
+
+
+
+	<select id="getRunningRecordById" resultMap="runningRecord">
+		SELECT * FROM running.t_running_record WHERE running_record_id = #{runningRecordId}
+	</select>
+
+
+	<select id="insertRunningRecord" parameterType="com.peipao.qdl.running.model.RunningRecord">
+		insert into running.t_running_record (
+			running_record_id,
+			running_id,
+			semester_id,
+			activity_id,
+			calorie_count,
+			kilometeor_count,
+			valid_kilometeor_count,
+			duration,
+			equally_speed,
+			equally_pace,
+			high_speed,
+			low_speed,
+			user_id,
+			start_date,
+			end_date,
+			is_effective,
+			enabled,
+			create_time,
+			type,
+			running_score,
+			duration_str,
+			phone_str,
+			user_token,
+			thumb_url,
+			node_status,
+			invalid_reason
+		) values (
+			#{runningRecord.runningRecordId},
+			#{runningRecord.runningId},
+			#{runningRecord.semesterId},
+			#{runningRecord.activityId},
+			#{runningRecord.calorieCount},
+			#{runningRecord.kilometeorCount},
+			#{runningRecord.validKilometeorCount},
+			#{runningRecord.duration},
+			#{runningRecord.equallySpeed},
+			#{runningRecord.equallyPace},
+			#{runningRecord.highSpeed},
+			#{runningRecord.lowSpeed},
+			#{runningRecord.userId},
+			#{runningRecord.startDate},
+			#{runningRecord.endDate},
+			#{runningRecord.isEffective},
+			#{runningRecord.enabled},
+			#{runningRecord.createTime},
+			#{runningRecord.type},
+			#{runningRecord.runningScore},
+			#{runningRecord.durationStr},
+			#{runningRecord.phoneStr},
+			#{runningRecord.userToken},
+			#{runningRecord.thumbUrl},
+			#{runningRecord.nodeStatus},
+			#{runningRecord.invalidReason}
+		);
+	</select>
+
+	<select id="getByUserIdAndSemesterId" resultType="map">
+		SELECT
+			running_record_id as runningRecordId,
+			ifnull(duration_str, '') as durationStr,
+			kilometeor_count as kilometeorCount,
+			type,
+			ifnull(equally_pace, 0) as equallyPace,
+			is_effective as isEffective,
+			DATE_FORMAT(start_date, '%Y年%m月%d %H:%i') as startDate,
+			ifnull(thumb_url, '') as thumbUrl,
+            calorie_count as calorieCount,
+            `status`,
+            node_status as nodeStatus
+		FROM running.t_running_record WHERE user_id=#{userId} AND semester_id=#{semesterId}
+		ORDER BY start_date desc
+		LIMIT #{from},#{num}
+	</select>
+
+	<sql id="column_get_srr" >
+		rr.running_record_id as runningRecordId,
+		rr.running_record_id as `key`,
+		rr.kilometeor_count as kilometeorCount,
+		rr.duration_str as duration,
+		TRUNCATE(rr.running_score, 2) as score,
+		rr.equally_pace as equallyPace,
+		rr.start_date as startDate,
+		rr.end_date as endDate,
+		rr.type as type,
+        rr.calorie_count as calorie,
+        rr.`status`,
+		ifnull(rr.thumb_url,'') as thumbUrl
+	</sql>
+
+	<select id="getStudentRunningRecordTotal" resultType="java.lang.Long">
+		SELECT count(rr.running_record_id) from running.t_running_record rr
+		where 1=1
+		and rr.user_id=#{studentId}
+		and rr.semester_id=#{semesterId}
+		and rr.is_effective=#{isEffective}
+		<if test="type != null and type != ''" >
+			and type = #{type}
+		</if>
+	</select>
+
+	<!--学生主页跑步成绩列表：有效成绩，并且不包含活动跑步-->
+	<select id="getStudentRunningRecord" resultType="map">
+		SELECT <include refid="column_get_srr" /> from running.t_running_record rr
+		where 1=1
+		and rr.user_id=#{studentId}
+		and rr.semester_id=#{semesterId}
+		and rr.is_effective=#{isEffective}
+		and rr.running_id is null
+		<if test="type != null and type != ''" >
+			and type = #{type}
+		</if>
+		LIMIT #{from},#{num}
+	</select>
+
+    <select id="getStudentRunningRecordDuration" resultType="map">
+        SELECT ifnull(SUM(rr.duration), 0) as sumDuration from running.t_running_record rr
+        where 1=1
+        and rr.user_id=#{studentId}
+        and rr.semester_id=#{semesterId}
+        and rr.is_effective=#{isEffective}
+		and rr.running_id is null
+    </select>
+
+	<sql id="column_get_srreffe" >
+        rr.running_record_id as `key`,
+        rr.running_record_id as runningRecordId,
+        rr.kilometeor_count as kilometeorCount,
+        rr.duration as duration,
+        rr.equally_pace as equallyPace,
+        rr.start_date as startDate,
+        rr.end_date as endDate,
+        rr.is_effective as effective,
+        rr.calorie_count as calorie,
+        rr.`status`
+	</sql>
+
+
+	<select id="getStudentNonEffectiveRunningRecordTotal" resultType="java.lang.Long">
+        SELECT count(rr.running_record_id) from running.t_running_record rr
+        where 1=1
+        and rr.user_id=#{studentId}
+		and rr.semester_id=#{semesterId}
+        and rr.is_effective != #{isEffective}
+        and rr.`status` = #{status}
+	</select>
+
+	<select id="getStudentNonEffectiveRunningRecord" resultType="map">
+		SELECT <include refid="column_get_srreffe" /> from running.t_running_record rr
+		where 1=1
+		and rr.user_id=#{studentId}
+		and rr.semester_id=#{semesterId}
+		and rr.is_effective != #{isEffective}
+		and rr.`status` = #{status}
+		LIMIT #{from},#{num}
+	</select>
+
+	<update id="updateRunningRecordForAppeal">
+		update running.t_running_record set `status` = #{status}, appeal_time = #{appealTime} where running_record_id = #{runningRecordId}
+	</update>
+
+    <update id="setRunningEffective">
+        update running.t_running_record set is_effective = #{isEffective}, `status` = #{status} where running_record_id = #{runningRecordId}
+    </update>
+
+	<update id="updateRunningRecordById" parameterType="com.peipao.qdl.running.model.RunningRecord" >
+		update running.t_running_record
+		<set >
+			<if test="runningRecord.runningId != null and runningRecord.runningId != ''" >
+				running_id = #{runningRecord.runningId},
+			</if>
+            <if test="runningRecord.semesterId != null and runningRecord.semesterId != ''" >
+                semester_id = #{runningRecord.semesterId},
+            </if>
+            <if test="runningRecord.activityId != null and runningRecord.activityId != ''" >
+                activity_id = #{runningRecord.activityId},
+            </if>
+            <if test="runningRecord.calorieCount != null and runningRecord.calorieCount != ''" >
+                calorie_count = #{runningRecord.calorieCount},
+            </if>
+            <if test="runningRecord.kilometeorCount != null and runningRecord.kilometeorCount != ''" >
+                kilometeor_count = #{runningRecord.kilometeorCount},
+            </if>
+            <if test="runningRecord.validKilometeorCount != null and runningRecord.validKilometeorCount != ''" >
+                valid_kilometeor_count = #{runningRecord.validKilometeorCount},
+            </if>
+            <if test="runningRecord.duration != null and runningRecord.duration != ''" >
+                duration = #{runningRecord.duration},
+            </if>
+            <if test="runningRecord.equallySpeed != null and runningRecord.equallySpeed != ''" >
+                equally_speed = #{runningRecord.equallySpeed},
+            </if>
+            <if test="runningRecord.equallyPace != null and runningRecord.equallyPace != ''" >
+                equally_pace = #{runningRecord.equallyPace},
+            </if>
+            <if test="runningRecord.highSpeed != null and runningRecord.highSpeed != ''" >
+                high_speed = #{runningRecord.highSpeed},
+            </if>
+            <if test="runningRecord.lowSpeed != null and runningRecord.lowSpeed != ''" >
+                low_speed = #{runningRecord.lowSpeed},
+            </if>
+            <if test="runningRecord.userId != null and runningRecord.userId != ''" >
+                user_id = #{runningRecord.userId},
+            </if>
+            <if test="runningRecord.startDate != null" >
+                start_date = #{runningRecord.startDate},
+            </if>
+            <if test="runningRecord.endDate != null" >
+                end_date = #{runningRecord.endDate},
+            </if>
+            <if test="runningRecord.isEffective != null" >
+                is_effective = #{runningRecord.isEffective},
+            </if>
+            <if test="runningRecord.enabled != null and runningRecord.enabled != ''" >
+                enabled = #{runningRecord.enabled},
+            </if>
+            <if test="runningRecord.createTime != null" >
+                create_time = #{runningRecord.createTime},
+            </if>
+            <if test="runningRecord.type != null" >
+                type = #{runningRecord.type},
+            </if>
+            <if test="runningRecord.runningScore != null and runningRecord.runningScore != ''" >
+                running_score = #{runningRecord.runningScore},
+            </if>
+            <if test="runningRecord.durationStr != null and runningRecord.durationStr != ''" >
+                duration_str = #{runningRecord.durationStr},
+            </if>
+            <if test="runningRecord.phoneStr != null and runningRecord.phoneStr != ''" >
+                phone_str = #{runningRecord.phoneStr},
+            </if>
+            <if test="runningRecord.userToken != null and runningRecord.userToken != ''" >
+                user_token = #{runningRecord.userToken},
+            </if>
+            <if test="runningRecord.thumbUrl != null and runningRecord.thumbUrl != ''" >
+                thumb_url = #{runningRecord.thumbUrl},
+            </if>
+            <if test="runningRecord.status != null" >
+                `status` = #{runningRecord.status},
+            </if>
+            <if test="runningRecord.nodeStatus != null" >
+                node_status = #{runningRecord.nodeStatus},
+            </if>
+		</set>
+		where running_record_id = #{runningRecord.runningRecordId}
+	</update>
+
+	<select id="getRunningRecordByIdWithUsernameAndImage" resultType="map">
+		SELECT t2.username, t2.image_url imageURL, t1.kilometeor_count length, t1.duration_str duration, t1.equally_pace pace, t1.calorie_count calorie, t1.thumb_url thumb FROM running.t_running_record t1
+		LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id
+		WHERE t1.running_record_id = #{runningRecordId}
+	</select>
+
+	<select id="getRecordCountToday" resultType="java.lang.Integer">
+		SELECT count(*) FROM running.t_running_record t
+		WHERE t.user_id = #{userId}
+        AND t.type = #{type}
+        AND t.is_effective = #{isEffective}
+        <![CDATA[ AND t.start_date >= #{startDateMin} ]]>
+        <![CDATA[ AND t.start_date <= #{startDateMax} ]]>
+	</select>
+
+	<select id="getMorningRecordByUser" resultType="java.lang.Long">
+		SELECT count(*) from running.t_running_record t
+		<![CDATA[where t.start_date > #{startDate}]]>
+        <![CDATA[and t.end_date < #{endDate}]]>
+		and t.type = #{type}
+		and t.is_effective = #{isEffective}
+        and t.user_id=#{userId}
+	</select>
+
+    <update id="updateNodeTimeAndStatus" parameterType="Map" >
+        update running.t_running_record set node_status=#{nodeStatus}, node_time=#{nodeTime} where running_record_id=#{runningRecordId}
+    </update>
+
+	<select id="getStudentAppealList" resultType="map">
+        SELECT
+			tt.`key`,
+			tt.runningRecordId,
+			tt.studentNo,
+			tt.username,
+			tt.mobile,
+			tt.effective,
+			tt.invalidReason,
+			tt.`status`,
+			tt.`type`,
+			tt.appealTime,
+			ifnull(tc.`name`, '') as courseName
+		FROM (
+            SELECT
+                r.`key`,
+                r.runningRecordId,
+                tu.student_no as studentNo,
+                tu.username,
+                tu.mobile,
+				tu.course_id,
+                r.effective,
+				r.invalidReason,
+                r.`status`,
+                r.`type`,
+                r.appealTime
+            from (
+                SELECT
+                    rr.running_record_id as `key`,
+                    rr.running_record_id as runningRecordId,
+                    rr.user_id as userId,
+                    rr.kilometeor_count as kilometeorCount,
+                    rr.duration_str as duration,
+                    rr.is_effective as effective,
+					rr.invalid_reason as invalidReason,
+					if(rr.activity_id=0, type, ${activityRunType}) as type,
+                    rr.`status`,
+                    rr.appeal_time as appealTime
+                FROM running.t_running_record rr
+                WHERE 1=1
+                AND rr.semester_id=#{semesterId}
+                <choose>
+                    <when test="all != null and all != ''">
+						AND rr.`status` != #{status}
+                    </when>
+                    <otherwise>
+                        AND rr.`status` = #{status}
+                    </otherwise>
+                </choose>
+            ) r LEFT JOIN t_user tu on r.userId=tu.user_id
+			<if test="queryType != null and queryType != '' and queryString != null and queryString != ''">
+                AND tu.${queryType} LIKE CONCAT('%',#{queryString},'%')
+            </if>
+
+			<if test='courseArray != null and courseArray != "" and courseArray != "0" and courseArray != "-1"'>
+				<choose>
+					<when test="daiding != null">
+						AND (tu.course_id in (${courseArray}) OR tu.course_id is null)
+					</when>
+					<otherwise>
+						AND tu.course_id in (${courseArray})
+					</otherwise>
+				</choose>
+            </if>
+
+			<if test='courseArray != null and courseArray == "0"'>
+				AND tu.course_id is null
+			</if>
+
+            WHERE tu.mobile is not null
+            ORDER BY r.appealTime desc
+		) tt LEFT JOIN t_course tc on tt.course_id=tc.course_id
+	</select>
+
+
+	<update id="updateEffectiveStatusOnly" parameterType="Map" >
+		update t_running_record
+		set
+            <if test="appealUserId != null">
+                appeal_user_id = #{appealUserId},
+            </if>
+			<if test="appealTime != null">
+				appeal_time = #{appealTime},
+			</if>
+            is_effective = #{isEffective},
+            `status` = #{status}
+		where running_record_id = #{runningRecordId}
+	</update>
+
+</mapper>

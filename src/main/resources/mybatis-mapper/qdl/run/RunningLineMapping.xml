@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.running.dao.RunningLineDao">
+	<resultMap type="com.peipao.qdl.running.model.RunningLine" id="runningLine">
+		<id property="runningLineId" column="running_line_id" /><!--主键ID-->
+		<result property="runningId" column="running_id" /><!--跑步主表ID-->
+		<result property="latitude" column="latitude" /><!--纬度值-->
+		<result property="longitude" column="longitude" /><!--经度值-->
+		<result property="lineName" column="line_name" /><!--点名称-->
+		<result property="sort" column="sort" /><!--排序-->
+	</resultMap>
+
+	<sql id="column_list_all" >
+		running_line_id  as runningLineId,
+		running_id  as runningId,
+		latitude,
+		longitude,
+		line_name as lineName,
+		sort
+	</sql>
+
+	<sql id="column_list_insert" >
+		running_id,
+		latitude,
+		longitude,
+		line_name,
+		sort
+	</sql>
+
+	<select id="getRunningLineByRunningId" resultMap="runningLine">
+		SELECT <include refid="column_list_all" /> FROM running.t_running_line WHERE running_id = #{runningId}
+	</select>
+
+	<insert id="insertRunningLineByBatch" useGeneratedKeys="true" keyColumn="running_line_id">
+		insert into running.t_running_line (
+			<include refid="column_list_insert"/>
+		) values
+		<foreach collection="runningLineList" item="item" index="index" separator=",">
+			(
+				#{runningId},
+				#{item.latitude},
+				#{item.longitude},
+				#{item.lineName},
+				#{item.sort}
+			)
+		</foreach>
+	</insert>
+
+	<!--<select id="getRunningLineByRunningId" >-->
+		<!--SELECT <include refid="column_list_all" /> FROM running.t_running_line-->
+		<!--WHERE running_rule_id = #{runningId}-->
+	<!--</select>-->
+
+	<delete id="deleteRunningLineByBatch">
+		delete from running.t_running_line where running_id = #{runningId}
+	</delete>
+</mapper>

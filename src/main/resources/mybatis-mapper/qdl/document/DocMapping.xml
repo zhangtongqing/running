@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocMapping-->
+<!--* 功能描述：DocMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章-->
+<mapper namespace="com.peipao.qdl.document.dao.DocDao">
+	<resultMap type="com.peipao.qdl.document.model.Doc" id="doc">
+		<id property="docId" column="doc_id" /><!--主键ID-->
+		<result property="docTitle" column="doc_title" /><!--文章标题-->
+		<result property="viewType" column="view_type" /><!--列表展现方式-->
+		<result property="docUrl" column="doc_url" /><!--文章链接-->
+		<result property="sortWeight" column="sort_weight" /><!--排序权重1-9999-->
+		<result property="readAmount" column="read_amount" /><!--阅读量-->
+		<result property="upvoteAmount" column="upvote_amount" /><!--点赞量-->
+		<result property="commentAmount" column="comment_amount" /><!--评论数-->
+		<result property="forwardAmount" column="forward_amount" /><!--转发量-->
+		<result property="createUserId" column="create_user_id" /><!--创建用户ID-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="updateTime" column="update_time" /><!--更新时间(默认预创建时间相同)-->
+		<result property="publishState" column="publish_state" /><!--文章发布状态，默认0=草稿-->
+		<result property="logicDelete" column="logic_delete" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+		<result property="createUserName" column="username" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+	</resultMap>
+
+	<!--从 APP 分析出的接口-->
+	<select id="getDocListTotal" resultType="java.lang.Long">
+		SELECT count(doc_id) AS total FROM running.t_doc
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND logic_delete = 0
+			<if test="docId != null">
+				AND doc_id = #{docId}
+			</if>
+		</trim>
+	</select>
+
+	<sql id="column_get_doc_list">
+		t1.doc_id as docId,
+		t1.view_type as viewType,
+		t1.doc_title as docTitle,
+		t1.read_amount as readAmount,
+		t1.comment_amount as commentAmount,
+		ifnull(t3.if_upvote,0) as ifUpvote,
+		t1.doc_url as docUrl
+	</sql>
+
+	<select id="getDocList" resultType="map">
+		SELECT <include refid="column_get_doc_list" />
+		FROM running.t_doc t1
+		LEFT JOIN
+			(SELECT if(t2.user_id=#{userId},1,0) AS if_upvote,t2.doc_id,t2.user_id FROM t_doc_upvote t2) t3 ON (t3.doc_id=t1.doc_id) AND t3.user_id=#{userId}
+ 		WHERE logic_delete=0
+ 		ORDER BY sort_weight DESC,update_time DESC
+		LIMIT #{from},#{num}
+	</select>
+
+	<!--<select id="getDocExtraInfoByDocId" resultType="map">-->
+		<!--SELECT read_amount AS readAmount,comment_amount AS commentAmount,upvote_amount AS upvoteAmount-->
+		<!--FROM running.t_doc t1-->
+		<!--WHERE doc_id=#{docId}-->
+	<!--</select>-->
+
+	<select id="getDocExtraInfoByDocIdShare" resultType="map">
+		SELECT
+			t1.doc_id as docId,
+			t1.read_amount as readAmount,
+			t1.comment_amount as commentAmount,
+			t1.upvote_amount as upvoteAmount,
+			0 as ifUpvote
+		FROM
+			t_doc t1
+		WHERE
+			t1.doc_id=#{docId} AND t1.logic_delete=0
+		LIMIT
+			0,1;
+	</select>
+
+	<select id="getDocExtraInfoByDocId" resultType="map">
+		SELECT
+			t1.doc_id as docId,
+			t1.read_amount as readAmount,
+			t1.comment_amount as commentAmount,
+			t1.upvote_amount as upvoteAmount,
+			ifnull(t3.if_upvote,0) as ifUpvote
+		FROM
+			t_doc t1
+		LEFT JOIN
+			(SELECT if(t2.user_id=#{userId},1,0) AS if_upvote,t2.doc_id,t2.user_id FROM t_doc_upvote t2) t3 ON (t3.doc_id=t1.doc_id) AND t3.user_id=#{userId} AND t3.doc_id=#{docId}
+		WHERE
+			t1.doc_id=#{docId} AND t1.logic_delete=0
+		LIMIT
+			0,1;
+	</select>
+
+	<update id="updateDocAmount">
+		UPDATE running.t_doc
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="upvoteAmount != null">
+				upvote_amount = upvote_amount + #{upvoteAmount},
+			</if>
+			<if test="readAmount != null">
+				read_amount = read_amount + #{readAmount},
+			</if>
+			<if test="commentAmount != null">
+				comment_amount = comment_amount + #{commentAmount},
+			</if>
+			<if test="forwardAmount != null">
+				forward_amount = forward_amount + #{forwardAmount},
+			</if>
+		</trim>
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND doc_id = #{docId}
+			<if test="upvoteAmount == -1">
+				AND upvote_amount > 0
+			</if>
+
+			<if test="readAmount == -1">
+				AND read_amount > 0
+			</if>
+
+			<if test="commentAmount == -1">
+				AND comment_amount > 0
+			</if>
+
+			<if test="forwardAmount == -1">
+				AND forward_amount > 0
+			</if>
+		</trim>
+	</update>
+
+	<sql id="column_get_doc_top">
+		t1.doc_id as docId,
+		t1.view_type as viewType,
+		t1.doc_title as docTitle,
+		t1.read_amount as readAmount,
+		t1.comment_amount as commentAmount,
+		t1.doc_url as docUrl
+	</sql>
+
+	<select id="getDocTopNum" resultType="map">
+		SELECT <include refid="column_get_doc_top" />
+		FROM running.t_doc t1
+ 		WHERE logic_delete=0
+		ORDER BY sort_weight DESC,update_time DESC
+		LIMIT 0,#{num}
+	</select>
+
+	<!--从 PC 分析出的接口-->
+	<sql id="column_doc_list">
+		t1.doc_id as `key`,
+		t1.doc_id as docId,
+		t1.doc_title as docTitle,
+		t2.username as createUserName,
+		t1.publish_state as publishState,
+		t1.update_time as updateTime,
+		t1.read_amount as readAmount,
+		t1.upvote_amount as upvoteAmount,
+		t1.comment_amount as commentAmount,
+		t1.forward_amount as forwardAmount,
+		t1.doc_url as docUrl,
+		t1.sort_weight as sortWeight
+	</sql>
+
+	<select id="selectDocList" resultType="map">
+		SELECT <include refid="column_doc_list" />
+		FROM running.t_doc t1,running.t_user t2
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND t1.logic_delete = 0
+			AND t1.create_user_id = t2.user_id
+			<if test="docId != null">
+				AND t1.doc_id = #{docId}
+			</if>
+			<if test="startTime != null and startTime != ''">
+				<![CDATA[ AND DATE_FORMAT(t1.create_time,'%Y-%m-%d') >= #{startTime} ]]>
+			</if>
+			<if test="endTime != null and endTime != ''">
+				<![CDATA[ AND DATE_FORMAT(t1.create_time,'%Y-%m-%d') <= #{endTime} ]]>
+			</if>
+			<if test="publishState != null">
+				AND t1.publish_state = #{publishState}
+			</if>
+			<if test="queryString != null and queryString != ''">
+				AND t1.doc_title LIKE concat(concat('%',#{queryString}),'%')
+			</if>
+		</trim>
+		<trim prefix="ORDER BY" suffixOverrides=",">
+			<if test="readAmountSort == 0">
+				read_amount ASC,
+			</if>
+			<if test="readAmountSort == 1">
+				read_amount DESC,
+			</if>
+			<if test="upvoteAmountSort == 0">
+				upvote_amount ASC,
+			</if>
+			<if test="upvoteAmountSort == 1">
+				upvote_amount DESC,
+			</if>
+			<if test="commentAmountSort == 0">
+				comment_amount ASC,
+			</if>
+			<if test="commentAmountSort == 1">
+				comment_amount DESC,
+			</if>
+			<if test="updateTimeSort == 0">
+				update_time ASC,
+			</if>
+			<if test="updateTimeSort == 1">
+				update_time DESC,
+			</if>
+		</trim>
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="selectDocListTotal" resultType="Long">
+		SELECT count(doc_id) as total
+		FROM running.t_doc t1,running.t_user t2
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND t1.logic_delete = 0
+			AND t1.create_user_id = t2.user_id
+			<if test="startTime != null and startTime != ''">
+				<![CDATA[ AND DATE_FORMAT(t1.create_time,'%Y-%m-%d') >= #{startTime} ]]>
+			</if>
+			<if test="endTime != null and endTime != ''">
+				<![CDATA[ AND DATE_FORMAT(t1.create_time,'%Y-%m-%d') <= #{endTime} ]]>
+			</if>
+			<if test="publishState != null">
+				AND t1.publish_state = #{publishState}
+			</if>
+			<if test="queryString != null and queryString != ''">
+				AND t1.doc_title LIKE concat(concat('%',#{queryString}),'%')
+			</if>
+		</trim>
+	</select>
+
+	<select id="getUserNameByUserId" resultType="java.lang.String">
+		SELECT t1.username AS userName
+		FROM running.t_user t1
+		WHERE t1.user_id=#{userId}
+	</select>
+
+	<insert id="insertDoc" parameterType="com.peipao.qdl.document.model.Doc"  keyProperty="doc.docId" useGeneratedKeys="true">
+		INSERT INTO running.t_doc( doc_title,view_type,doc_url,sort_weight,create_user_id,create_time,update_time,publish_state,is_hot )
+		VALUES ( #{doc.docTitle},#{doc.viewType},#{doc.docUrl},#{doc.sortWeight},#{doc.createUserId},#{doc.createTime},#{doc.createTime},#{doc.publishState},#{doc.isHot} );
+	</insert>
+
+	<update id="updateDocPublishState">
+		UPDATE running.t_doc SET publish_state = #{publishState},update_time = #{updateTime} WHERE doc_id = #{docId}
+	</update>
+
+	<update id="updateDocLogicDelete">
+		UPDATE running.t_doc SET logic_delete = #{LogicDelete} WHERE doc_id = #{docId}
+	</update>
+
+	<update id="updateDocDocUrl">
+		UPDATE running.t_doc SET doc_url = #{docUrl} WHERE doc_id = #{docId}
+	</update>
+
+	<update id="updateDoc" parameterType="com.peipao.qdl.document.model.Doc">
+		UPDATE running.t_doc
+		SET
+			doc_title = #{doc.docTitle},
+			view_type = #{doc.viewType},
+			doc_url = #{doc.docUrl},
+			sort_weight = #{doc.sortWeight},
+			update_time = #{doc.updateTime},
+			publish_state = #{doc.publishState}
+		WHERE doc_id = #{doc.docId}
+	</update>
+
+	<!--2.11-->
+	<select id="getDocExtraInfoForEdit" resultType="map">
+		SELECT
+			t1.doc_id as docId,
+			t1.doc_title as docTitle,
+			t1.doc_url as docUrl,
+			t1.view_type as viewType,
+			t1.sort_weight as sortWeight
+		FROM
+ 			t_doc t1
+		WHERE
+			t1.doc_id=#{docId} AND logic_delete=0
+	</select>
+</mapper>

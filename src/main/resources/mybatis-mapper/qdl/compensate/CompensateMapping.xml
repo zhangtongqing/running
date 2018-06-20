@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.compensate.dao.CompensateDao">
+
+	<resultMap type="com.peipao.qdl.compensate.model.Compensate" id="compensate">
+		<id property="compensateId" column="compensate_id" />
+		<result property="semesterId" column="semester_id" />
+		<result property="userId" column="user_id" />
+		<result property="runningRecordId" column="running_record_id" />
+		<result property="runningCount" column="running_count" />
+		<result property="compensateScore" column="compensate_score" />
+		<result property="runningLength" column="running_length" />
+		<result property="runningType" column="running_type" />
+		<result property="remark" column="remark" />
+		<result property="updateTime" column="update_time" />
+		<result property="updateUserId" column="update_user_id" />
+	</resultMap>
+
+	<insert id="insertCompensate" useGeneratedKeys="true" keyProperty="compensate.compensateId" parameterType="com.peipao.qdl.compensate.model.Compensate">
+		insert into running.t_compensate(
+			semester_id, user_id,
+            <if test="compensate.runningRecordId != null" >
+                running_record_id,
+            </if>
+            running_type, compensate_score,
+			<if test="compensate.runningCount != null" >
+				running_count,
+			</if>
+			<if test="compensate.runningLength != null" >
+				running_length,
+			</if>
+            remark, update_time, update_user_id
+		) values (
+			#{compensate.semesterId}, #{compensate.userId},
+            <if test="compensate.runningRecordId != null" >
+                #{compensate.runningRecordId},
+            </if>
+            #{compensate.runningType}, #{compensate.compensateScore},
+			<if test="compensate.runningCount != null" >
+				#{compensate.runningCount},
+			</if>
+			<if test="compensate.runningLength != null" >
+				#{compensate.runningLength},
+			</if>
+			#{compensate.remark},#{compensate.updateTime}, #{compensate.updateUserId}
+		);
+	</insert>
+
+	<select id="getCompensateInfoForStudent" resultType="map">
+		SELECT
+            running_count as runningCount,
+            running_length as runningLength,
+			compensate_score as compensateScore,
+            running_type as runningType,
+			update_time as updateTime,
+			update_user_id as updateUserId
+		FROM running.t_compensate
+		WHERE user_id = #{userId}
+        AND  semester_id = #{semesterId}
+		AND  running_record_id = #{runningRecordId}
+		LIMIT 1
+	</select>
+
+	<select id="getCompensateListForStudent" resultType="map">
+        SELECT
+            t.running_count as runningCount,
+            t.running_length as runningLength,
+            t.compensate_score as compensateScore,
+            t.running_type as runningType,
+            t.remark as remark,
+            t.update_time as updateTime,
+            tu.username as username
+        FROM running.t_compensate t
+        LEFT JOIN running.t_user tu on t.update_user_id=tu.user_id
+        WHERE t.user_id = #{studentId}
+        AND  t.semester_id = #{semesterId}
+        ORDER BY t.compensate_id desc
+	</select>
+
+</mapper>

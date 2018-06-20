@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--发现-动力圈-->
+<mapper namespace="com.peipao.qdl.discover.dao.HotParamsDao">
+
+    <resultMap type="com.peipao.qdl.discover.model.HotParams" id="hotParams">
+		<id property="hotParamsId" column="hot_params_id" /><!--主键ID-->
+		<result property="upvoteAmount" column="upvote_amount" /><!--点赞数指标-->
+		<result property="commentAmount" column="comment_amount" /><!--评论数指标-->
+		<result property="logicDelete" column="logic_delete" /><!--创建时间-->
+		<result property="createTime" column="create_time" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+    </resultMap>
+
+    <!-- 根据ID获取动力圈热门规则参数 -->
+    <select id="getHotParams" parameterType="Long" resultMap="hotParams">
+        select * from running.t_hot_params where logic_delete='0' ORDER BY hot_params_id desc LIMIT 1
+    </select>
+
+    <!-- 添加动力圈热门规则参数 -->
+    <insert id="inserHotParams" parameterType="com.peipao.qdl.discover.model.HotParams" keyProperty="hotParams.hotParamsId" useGeneratedKeys="true">
+        INSERT INTO running.t_hot_params(
+            upvote_amount,
+            comment_amount,
+            logic_delete,
+            create_time
+        ) VALUES (
+            #{upvoteAmount},
+            #{commentAmount},
+            #{logicDelete},
+            #{createTime}
+        );
+    </insert>
+
+    <!-- 根据ID修改动力圈热门规则参数 -->
+    <update id="updateHotParams" parameterType="com.peipao.qdl.discover.model.HotParams">
+        UPDATE running.t_hot_params
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="upvoteAmount != null and upvoteAmount != ''">
+                upvote_amount = #{upvoteAmount},
+            </if>
+            <if test="commentAmount != null and commentAmount != ''">
+                comment_amount = #{commentAmount},
+            </if>
+        </trim>
+        WHERE hot_params_id = #{hotParamsId}
+    </update>
+
+</mapper>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.course.dao.CourseScheduleDescDao">
+
+	<resultMap type="com.peipao.qdl.course.model.CourseScheduleDesc" id="courseScheduleDesc">
+		<id property="courseScheduleDescId" column="course_schedule_desc_id" />
+		<result property="courseId" column="course_id" />
+		<result property="weekday" column="weekday" />
+		<result property="courseIndex" column="course_index" />
+		<result property="duration" column="duration" />
+		<result property="time" column="time" />
+		<result property="weekStart" column="week_start" />
+		<result property="weekEnd" column="week_end" />
+	</resultMap>
+
+	<select id="getCourseScheduleDescList" resultMap="courseScheduleDesc">
+		SELECT * FROM t_course_schedule_desc WHERE course_id = #{courseId}
+	</select>
+
+	<insert id="insertCourseScheduleDesc">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="courseScheduleDescId">
+			SELECT last_insert_id() AS courseScheduleDescId
+		</selectKey>
+		insert into running.t_course_schedule_desc (course_id, weekday, course_index, duration, time, week_start, week_end) values
+			(#{courseId}, #{weekday}, #{courseIndex}, #{duration}, #{time}, #{weekStart}, #{weekEnd});
+	</insert>
+
+
+	<delete id="deleteCoursescheduleDescById">
+		DELETE FROM running.t_course_schedule_desc WHERE course_schedule_desc_id = #{descId}
+	</delete>
+
+
+
+</mapper>

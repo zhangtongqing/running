@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.peipao.framework.log.dao.SystemLogDao">
+
+	<resultMap type="com.peipao.framework.log.model.SystemLog" id="systemLog">
+		<id property="logId" column="log_id" />
+		<result property="description" column="description" />
+		<result property="method" column="method" />
+		<!--<result property="type" column="type" />-->
+		<result property="ip" column="ip" />
+		<result property="exceptionCode" column="exception_code" />
+		<result property="exceptionDetail" column="exception_detail" />
+		<result property="userId" column="user_id" />
+		<result property="username" column="username" />
+		<result property="mobile" column="mobile" />
+		<result property="createDate" column="create_date" />
+		<result property="clientType" column="client_type" />
+		<result property="version" column="version" />
+	</resultMap>
+
+	<resultMap type="com.peipao.framework.log.model.SystemLogVo" id="systemLogVo">
+		<id property="logId" column="log_id" />
+		<result property="number" column="number" />
+		<result property="description" column="description" />
+		<result property="method" column="method" />
+		<result property="ip" column="ip" />
+		<result property="createDate" column="create_date" />
+		<result property="username" column="username" />
+		<result property="nickname" column="nickname" />
+		<result property="userType" column="user_type" />
+		<result property="schoolName" column="school_name" />
+		<result property="isAuth" column="is_auth" />
+	</resultMap>
+
+
+	<select id="getSystemLogsTotal" resultType="java.lang.Long">
+		SELECT
+			count(tsl.log_id)
+		FROM tx_log.t_system_log tsl
+		WHERE 1=1
+		<if test="startTime != null and startTime != ''" >
+			<![CDATA[and tsl.create_date >= #{startTime}]]>
+		</if>
+		<if test="endTime != null and endTime != ''" >
+			<![CDATA[and tsl.create_date <= #{endTime}]]>
+		</if>
+	</select>
+
+	<select id="getSystemLogs" resultMap="systemLogVo">
+		SELECT @rownum := @rownum + 1 AS number, k.* from (
+		SELECT
+		tsl.log_id as logId,
+		tsl.method,
+		tsl.description,
+		tsl.ip,
+		tsl.create_date as createDate,
+		tu.nick_name as nickName,
+		ifnull(tu.username, '') as username,
+		tu.user_type as userType,
+		ifnull(ts.`name`, '') as schoolName,
+		ifnull(ts.is_auth, 0) as isAuth
+		FROM (SELECT * from tx_log.t_system_log
+		WHERE 1=1
+		<if test="startTime != null and startTime != ''">
+			<![CDATA[and create_date >= #{startTime}]]>
+		</if>
+		<if test="endTime != null and endTime != ''">
+			<![CDATA[and create_date <= #{endTime}]]>
+		</if>
+		ORDER BY create_date desc LIMIT #{from},#{num}) tsl
+		LEFT JOIN running.t_user tu ON (tsl.user_id=tu.user_id or tsl.username=tu.username or tsl.mobile=tu.mobile)
+		LEFT JOIN running.t_school ts ON tu.school_id=ts.school_id
+		) k, (SELECT @rownum := 0) r
+	</select>
+
+
+	<insert id="insertSystemLog" useGeneratedKeys="true" keyProperty="systemLog.logId" parameterType="com.peipao.framework.log.model.SystemLog">
+		insert into tx_log.t_system_log(
+		method,
+		<if test="systemLog.description != null">
+			description,
+		</if>
+
+		<if test="systemLog.ip != null">
+			ip,
+		</if>
+		<if test="systemLog.exceptionCode != null">
+			exception_code,
+		</if>
+		<if test="systemLog.exceptionDetail != null">
+			exception_detail,
+		</if>
+
+		<if test="systemLog.userId != null">
+			user_id,
+		</if>
+
+		<if test="systemLog.username != null">
+			username,
+		</if>
+
+		<if test="systemLog.mobile != null">
+			mobile,
+		</if>
+		<if test="systemLog.clientType != null">
+			client_type,
+		</if>
+		<if test="systemLog.version != null">
+			version,
+		</if>
+		create_date
+		)
+		values (
+		#{systemLog.method},
+		<if test="systemLog.description != null">
+			#{systemLog.description},
+		</if>
+		<if test="systemLog.ip != null">
+			#{systemLog.ip},
+		</if>
+		<if test="systemLog.exceptionCode != null">
+			#{systemLog.exceptionCode},
+		</if>
+		<if test="systemLog.exceptionDetail != null">
+			#{systemLog.exceptionDetail},
+		</if>
+		<if test="systemLog.userId != null">
+			#{systemLog.userId},
+		</if>
+		<if test="systemLog.username != null">
+			#{systemLog.username},
+		</if>
+		<if test="systemLog.mobile != null">
+			#{systemLog.mobile},
+		</if>
+		<if test="systemLog.clientType != null">
+			#{systemLog.clientType},
+		</if>
+		<if test="systemLog.version != null">
+			#{systemLog.version},
+		</if>
+		#{systemLog.createDate}
+		);
+	</insert>
+
+
+
+</mapper>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.course.dao.CourseChooseRecordDao">
+
+	<insert id="insertCourseChooseRecord">
+		insert into running.t_course_choose_record (user_id, semester_id, old_course_id, new_course_id, create_time) values (#{userId}, #{semesterId}, #{oldCourseId},#{newCourseId},#{createTime});
+	</insert>
+
+	<select id="queryRecordCount" resultType="java.lang.Integer">
+		SELECT count(1) FROM running.t_course_choose_record WHERE user_id = #{userId} AND semester_id = #{semesterId}
+	</select>
+
+
+
+
+</mapper>

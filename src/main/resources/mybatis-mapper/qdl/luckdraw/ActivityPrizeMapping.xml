@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.luckdraw.dao.ActivityPrizeDao">
+
+	<resultMap type="com.peipao.qdl.luckdraw.model.ActivityPrize" id="activityPrize">
+        <id     property="prizeId"        column="prize_id" />        <!--主键ID-->
+        <result property="activityId"     column="activity_id" />     <!--活动主键ID-->
+        <result property="prizeTitle"     column="prize_title" />     <!--奖品名称-->
+        <result property="prizeTotal"     column="prize_total" />     <!--奖品数量-->
+        <result property="prizeSendTotal" column="prize_send_total" /><!--已派出数量-->
+        <result property="prizeWeight"    column="prize_weight" />    <!--权重-->
+        <result property="userLimit"      column="user_limit" />      <!--同一用户可抽中次数限制-->
+        <result property="startTime"      column="start_time" />      <!--当前奖品抽奖开始时间-->
+        <result property="endTime"        column="end_time" />        <!--当前奖品抽奖结束时间-->
+        <result property="createTime"     column="create_time" />     <!--创建时间-->
+        <result property="createUserId"   column="create_user_id" />  <!--创建用户ID-->
+        <result property="updateTime"     column="update_time" />     <!--更新时间-->
+        <result property="updateUserId"   column="update_user_id" />  <!--更新用户ID-->
+        <result property="prizeImg"       column="prize_img" />       <!--中奖展示的图片链接-->
+        <result property="logicDelete"    column="logic_delete" />    <!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+    </resultMap>
+
+
+    <insert id="addActivityPrize">
+        <selectKey resultType="java.lang.Long" order="AFTER" keyProperty="prizeId">
+             SELECT last_insert_id() AS prizeId
+        </selectKey>
+        insert into running.t_activity_prize(
+            activity_id, prize_title, prize_total, prize_send_total, prize_weight, user_limit, start_time, end_time, create_user_id, create_time,
+            update_user_id, update_time, prize_img, logic_delete
+        ) values(
+            #{activityId},#{prizeTitle},#{prizeTotal},#{prizeSendTotal},#{prizeWeight},#{userLimit},#{startTime},#{endTime},#{createUserId},#{createTime},
+            #{updateUserId},#{updateTime}, #{prizeImg}, 0
+        );
+    </insert>
+
+    <select id="getActivityPrizeByActivityId" resultMap="activityPrize">
+        SELECT * FROM running.t_activity_prize WHERE activity_id=#{activityId} AND logic_delete=#{logicDelete}
+    </select>
+
+    <select id="getActivityPrizeById" resultMap="activityPrize">
+        SELECT prize_id, activity_id, prize_title, prize_total, prize_send_total, prize_weight, user_limit, start_time, end_time, create_user_id, create_time,
+                update_user_id, update_time, prize_img, logic_delete FROM running.t_activity_prize WHERE prize_id = #{prizeId} AND logic_delete = 0
+    </select>
+
+    <update id="updateActivityPrize">
+        UPDATE running.t_activity_prize
+        <set>
+            <if test="prizeTitle != null and prizeTitle != ''">
+                prize_title = #{prizeTitle},
+            </if>
+            <if test="prizeTotal != null ">
+                prize_total = #{prizeTotal},
+            </if>
+            <if test="prizeSendTotal != null ">
+                prize_send_total = #{prizeSendTotal},
+            </if>
+            <if test="prizeWeight != null ">
+                    prize_weight = #{prizeWeight},
+            </if>
+            <if test="userLimit != null ">
+                    user_limit = #{userLimit},
+            </if>
+            <if test="startTime != null ">
+                    start_time = #{startTime},
+            </if>
+            <if test="endTime != null ">
+                    end_time = #{endTime},
+            </if>
+            <if test="updateTime != null ">
+                    update_time = #{updateTime},
+            </if>
+            <if test="updateUserId != null ">
+                    update_user_id = #{updateUserId},
+            </if>
+            <if test="prizeImg != null ">
+                prize_img = #{prizeImg},
+            </if>
+        </set>
+        WHERE prize_id = #{prizeId}
+    </update>
+
+    <update id="updatePrizeSendTotal">
+        UPDATE running.t_activity_prize SET prize_send_total=prize_send_total+1
+        WHERE prize_id=#{prizeId}
+    </update>
+
+    <update id="logicDeleteActivityPrizeByPrizeId">
+        UPDATE running.t_activity_prize
+        SET
+            logic_delete=#{logicDelete},
+            update_user_id=#{updateUserId},
+            update_time=#{updateTime}
+        WHERE prize_id=#{prizeId}
+    </update>
+
+
+</mapper>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.activity.dao.ActivityMemberDao">
+
+	<resultMap type="com.peipao.qdl.activity.model.ActivityMember" id="activityMember">
+		<id property="activityMemberId"  column="activity_member_id" />
+		<result property="activityId"  column="activity_id" />
+		<result property="userId"  column="user_id" />
+		<result property="enrollTime"  column="enroll_time" />
+		<result property="signcount"  column="sign_count" />
+		<result property="sucCount"  column="suc_count" />
+		<result property="runningLenght"  column="running_length" />
+		<result property="duration"  column="duration" />
+		<result property="calorieCount"  column="calorie_count" />
+		<result property="createTime"  column="create_time" />
+	</resultMap>
+
+	<insert id="insertActivityMember">
+		insert into running.t_activity_member(activity_id, user_id, enroll_time, create_time)
+		values
+		(#{activityId}, #{userId}, #{enrollTime}, #{createTime})
+	</insert>
+
+	<update id="updateActivityMember">
+		update running.t_activity_member
+		<set>
+			<if test="signcount != null">
+				sign_count = sign_count + 1,
+			</if>
+			<if test="sucCount != null">
+				suc_count = #{sucCount},
+			</if>
+			<if test="runningLenght != null">
+				running_length = #{runningLenght},
+			</if>
+			<if test="duration != null">
+				duration = #{duration},
+			</if>
+			<if test="calorieCount != null">
+				calorie_count = #{calorieCount},
+			</if>
+		</set>
+		where activity_member_id = #{activityMemberId}
+	</update>
+
+	<select id="queryActivityMemberById" resultMap="activityMember">
+		SELECT * FROM running.t_activity_member WHERE activity_id = #{activityId} AND user_id = #{userId} ORDER BY activity_member_id desc LIMIT 1
+	</select>
+
+
+	<select id="getStatisticsData" resultType="map">
+		SELECT  count(*) as enrollCount , sum(am.sign_count) as signCount , sum(am.suc_count) as sucCount from t_activity_member am where am.activity_id = #{activityId};
+	</select>
+
+	<select id="getActivityMemberList" resultType="map">
+		select tt.imageURL, tt.userId, tt.name, tt.sex, tt.username, tt.rank, convert(tt.runningLength,decimal(12,2)) runningLength
+		from (
+		select * from (
+		select t.*, @rownum := @rownum + 1 AS rank from (
+		select t.imageURL, t.userId, t.name, t.sex, t.username, sum(running_length) runningLength, sum(duration) duration, sum(calorie_count) calorieCount from (
+		select t6.image_url imageURL, t1.user_id userId, t3.name, t6.sex, t6.username, t1.running_length, t1.duration, t1.calorie_count from running.t_activity_member t1
+		left join running.t_activity t2 on t1.activity_id = t2.activity_id
+		left join running.t_user t6 on t6.user_id = t1.user_id
+		left join running.t_school t3 on t3.school_id = t6.school_id
+		where t2.activity_id = #{activityId} ) t GROUP BY t.userId) t
+		ORDER BY runningLength desc,userId desc
+		) t, (SELECT @rownum := 0 r) r
+		) tt
+	</select>
+
+	<select id="getMyRankInActivityMemberList" resultType="map">
+		select tt.imageURL, tt.userId, tt.name, tt.sex, tt.username, tt.rank, convert(tt.runningLength,decimal(12,2)) runningLength
+		from (
+		select * from (
+		select t.*, @rownum := @rownum + 1 AS rank from (
+		select t.imageURL, t.userId, t.name, t.sex, t.username, sum(running_length) runningLength, sum(duration) duration, sum(calorie_count) calorieCount from (
+		select t6.image_url imageURL, t1.user_id userId, t3.name, t6.sex, t6.username, t1.running_length, t1.duration, t1.calorie_count from running.t_activity_member t1
+		left join running.t_activity t2 on t1.activity_id = t2.activity_id
+		left join running.t_user t6 on t6.user_id = t1.user_id
+		left join running.t_school t3 on t3.school_id = t6.school_id
+		where t2.activity_id = #{activityId} ) t GROUP BY t.userId) t
+		ORDER BY runningLength desc,userId desc
+		) t, (SELECT @rownum := 0 r) r
+		) tt where userId= #{userId}
+	</select>
+
+	<select id="queryActivityMemberListForWeb" resultType="map">
+		SELECT t1.user_id `key`, t2.user_id userId, t2.username, t2.mobile, t1.sign_count activityCount, t1.running_length runningLength, t1.duration,
+		t1.calorie_count calorieCount, t1.suc_count activitySucCount, t2.student_no studentNO FROM running.t_activity_member t1
+		LEFT JOIN running.t_user t2 on t1.user_id = t2.user_id
+		LEFT JOIN running.t_activity t3 ON t3.activity_id = t1.activity_id
+		WHERE t1.activity_id = #{activityId}
+		<if test="status == 0">
+			AND t1.suc_count = 0
+		</if>
+		<if test="status == 1">
+			AND t1.suc_count > 0
+		</if>
+		ORDER BY t2.user_id DESC
+		<if test=" from > 0 and num > 0">
+			LIMIT #{from},#{num}
+		</if>
+	</select>
+
+	<select id="queryActivityMemberListForWebCount" resultType="java.lang.Long">
+		SELECT count(*) FROM (
+		SELECT t1.* FROM running.t_activity_member t1 WHERE t1.activity_id = #{activityId}
+		<if test="status == 0">
+			AND t1.suc_count = 0
+		</if>
+		<if test="status == 1">
+			AND t1.suc_count > 0
+		</if>) t
+	</select>
+
+
+	<select id="queryActivityMemberListForWebNew" resultType="map">
+		SELECT
+		t1.user_id `key`,
+		t2.user_id as userId,
+		t2.username  username,
+		t2.mobile  mobile,
+		t1.sign_count activityCount,
+		t1.running_length runningLength,
+		t1.duration as duration,
+		t1.calorie_count calorieCount,
+		t1.suc_count activitySucCount,
+		t2.student_no studentNO,
+		t4. NAME AS schoolName
+
+		FROM running.t_activity_member t1
+		LEFT JOIN running.t_user t2 on t1.user_id = t2.user_id
+		LEFT JOIN running.t_activity t3 ON t3.activity_id = t1.activity_id
+		LEFT JOIN t_school t4 on t4.school_id = t2.school_id
+		WHERE t1.activity_id = #{activityId}
+		<if test="status == 0">
+			AND t1.suc_count = 0
+		</if>
+		<if test="status == 1">
+			AND t1.suc_count > 0
+		</if>
+		<if test="searchkey != null">
+			and (t2.username LIKE '%${searchkey}%'
+			OR t2.mobile LIKE '%${searchkey}%'
+			OR t2.student_no LIKE '%${searchkey}%')
+		</if>
+		<if test="sortName != null and sortType != null">
+			ORDER BY ${sortName} ${sortType}
+		</if>
+	</select>
+
+
+	<select id="getActivityRunningRecordByUserId" resultType="map">
+		SELECT
+			t.kilometeor_count AS kilometeorCount,
+			t.duration_str AS durationStr,
+			t.equally_pace AS equallyPace,
+			t.calorie_count AS calorieCount,
+			t.is_effective AS isEffective,
+			t.start_date AS startDate,
+			t.end_date AS endDate,
+			t.thumb_url AS thumbUrl
+		FROM
+			t_running_record t
+		WHERE
+			t.activity_id =  #{activityId}
+		AND t.user_id = #{userId}
+	</select>
+
+	<select id="getActivityByMemberList" resultType="map">
+		select ifnull(tt.imageURL,'o_1cfa716os1uro19581jdnf6jvmhdc.png') as imageURL
+		from (
+		select * from (
+		select t.*, @rownum := @rownum + 1 AS rank from (
+		select t.imageURL, t.userId, t.name, t.sex, t.username, sum(running_length) runningLength, sum(duration) duration, sum(calorie_count) calorieCount from (
+		select t6.image_url imageURL, t1.user_id userId, t3.name, t6.sex, t6.username, t1.running_length, t1.duration, t1.calorie_count from running.t_activity_member t1
+		left join running.t_activity t2 on t1.activity_id = t2.activity_id
+		left join running.t_user t6 on t6.user_id = t1.user_id
+		left join running.t_school t3 on t3.school_id = t6.school_id
+		where t2.activity_id = #{activityId} ) t GROUP BY t.userId) t
+		ORDER BY runningLength desc,userId desc
+		) t, (SELECT @rownum := 0 r) r
+		) tt LIMIT #{size}
+	</select>
+</mapper>

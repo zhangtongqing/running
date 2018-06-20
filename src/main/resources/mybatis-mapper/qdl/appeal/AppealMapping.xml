@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.appeal.dao.AppealDao">
+
+	<resultMap type="com.peipao.qdl.appeal.model.Appeal" id="appeal">
+		<id property="appealId" column="appeal_id" />
+		<result property="runningId" column="running_id" />
+		<result property="userId" column="user_id" />
+		<result property="schoolId" column="school_id" />
+		<result property="reason" column="reason" />
+		<result property="status" column="status" />
+		<result property="createTime" column="create_time" />
+	</resultMap>
+
+
+	<resultMap type="com.peipao.qdl.appeal.model.QA" id="qa">
+		<id property="qaId" column="qa_id" />
+		<result property="title" column="title" />
+		<result property="content" column="content" />
+		<result property="createTime" column="create_time" />
+		<result property="userId" column="user_id" />
+		<result property="enabled" column="enabled" />
+		<result property="username" column="username" />
+	</resultMap>
+
+	<select id="insertAppeal">
+		insert into running.t_appeal (running_id, user_id, school_id,create_time, status) values (#{runningId},#{userId}, #{schoolId},#{createTime},#{status});
+	</select>
+
+	<select id="queryAppealStatusByRunningId" resultType="int">
+# 		SELECT status FROM running.t_appeal WHERE running_id = #{runningId}
+		SELECT status from running.t_running_record where running_record_id = #{runningRecordId}
+	</select>
+
+	<update id="updateAppeal">
+		UPDATE running.t_appeal
+		<set>
+			<if test="reason != null and reason != ''">
+				reason = #{reason},
+			</if>
+			<if test="status != null">
+				status = #{status},
+			</if>
+		</set>
+		WHERE appeal_id = #{appealId}
+	</update>
+
+	<insert id="insertFeedbackRecord">
+		INSERT INTO running.t_feedback_record (type, user_id, content, time, platform)
+		VALUES (#{type}, #{userId}, #{content}, #{time}, #{platform})
+	</insert>
+
+	<select id="queryFeedbackRecord" resultType="map">
+		SELECT type, content, time FROM running.t_feedback_record WHERE user_id = #{userId}
+	</select>
+
+	<insert id="insertQA">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="qaId">
+			SELECT last_insert_id() AS qaId
+		</selectKey>
+		insert into running.t_qa (title, content, user_id, create_time) values (#{title}, #{content}, #{userId}, #{createTime});
+	</insert>
+
+	<select id="queryQAList" resultType="map">
+		SELECT t1.title, t1.qa_id qaId, t2.username, t1.create_time createTime FROM running.t_qa t1
+			LEFT JOIN (SELECT * from running.t_user WHERE status = 1) t2 ON t2.user_id = t1.user_id
+		WHERE t1.enabled = 1
+		<if test="title != null and title != ''">
+			AND t1.title like concat('%',#{title}, '%')
+		</if>
+		limit #{from},#{num}
+	</select>
+
+	<select id="queryQAListCount" resultType="java.lang.Long">
+		SELECT count(*) FROM running.t_qa t1
+		WHERE t1.enabled = 1
+		<if test="title != null and title != ''">
+			AND t1.title like concat('%',#{title}, '%')
+		</if>
+	</select>
+
+	<select id="queryQAContent" resultType="java.lang.String">
+		SELECT content FROM running.t_qa WHERE qa_id = #{qaId} AND enabled = 1
+	</select>
+
+	<update id="updateQA">
+		update running.t_qa
+		 <set>
+			 <if test="title != null and title != ''">
+				 title = #{title},
+			 </if>
+			 <if test="content != null and content != ''">
+				 content = #{content},
+			 </if>
+		 </set>
+		where qa_id = #{qaId};
+	</update>
+
+	<select id="queryFeedbackRecordList" resultType="map">
+		SELECT t1.feedback_record_id `key`, t1.feedback_record_id feedbackId, t1.type, t1.content, t1.time, t2.username, t3.name, t2.mobile, t1.platform, t2.user_type userType, t1.operate FROM running.t_feedback_record t1
+		LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id
+		LEFT JOIN running.t_school t3 ON t3.school_id = t2.school_id
+		WHERE 1 = 1
+		<if test="operate != null and operate == 1">
+			AND t1.operate = 1
+		</if>
+		<if test="operate != null and operate == 2">
+			AND t1.operate = 0
+		</if>
+		<if test="platform != null and platform == 1">
+			AND t1.platform = 0
+		</if>
+		<if test="platform != null and platform == 2">
+			AND t1.platform = 1
+		</if>
+		<if test="userType != null and userType != 0">
+			AND t2.user_type = #{userType}
+		</if>
+		ORDER BY t1.feedback_record_id DESC limit #{from},#{num}
+	</select>
+	<select id="queryFeedbackRecordListCount" resultType="java.lang.Long">
+		SELECT count(*) FROM running.t_feedback_record t1
+		LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id
+		WHERE 1 = 1
+		<if test="operate != null and operate == 1">
+			AND t1.operate = 1
+		</if>
+		<if test="operate != null and operate == 2">
+			AND t1.operate = 0
+		</if>
+		<if test="platform != null and platform == 1">
+			AND t1.platform = 0
+		</if>
+		<if test="platform != null and platform == 2">
+			AND t1.platform = 1
+		</if>
+		<if test="userType != null and userType != 0">
+			AND t2.user_type = #{userType}
+		</if>
+	</select>
+
+	<update id="updateFeedbackRecord">
+		UPDATE running.t_feedback_record
+		<set>
+			<if test="operate != null">
+				operate = #{operate},
+			</if>
+		</set>
+		WHERE feedback_record_id = #{feedbackId}
+	</update>
+
+	<select id="queryQAById" resultMap="qa">
+		SELECT t1.*, t2.username FROM running.t_qa t1
+			LEFT JOIN running.t_user t2 ON t1.user_id = t2.user_id
+		WHERE qa_id = #{qaId} AND t1.enabled = 1
+	</select>
+
+	<delete id="deleteQA">
+		update running.t_qa set enabled = 0 where qa_id = #{qaId};
+	</delete>
+</mapper>

@@ -1,0 +1,1 @@
+package com.peipao.framework.annotation;import java.lang.annotation.*;/** * 用来标识方法的可访问性，该注解为游客用户权限 * */@Target({ElementType.METHOD,ElementType.TYPE})    @Retention(RetentionPolicy.RUNTIME)    @Documented    public  @interface Visitor {        String description()  default "";            }    

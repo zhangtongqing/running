@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocCommentUpvoteMapping-->
+<!--* 功能描述：DocCommentUpvoteMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章评论点赞-->
+<mapper namespace="com.peipao.qdl.document.dao.CommentUpvoteDao">
+	<resultMap type="com.peipao.qdl.document.model.CommentUpvote" id="commentUpvote">
+		<id property="upvoteId" column="upvote_id" /><!--主键ID-->
+		<result property="commentId" column="comment_id" /><!--文章评论主键ID-->
+		<result property="userId" column="user_id" /><!--评论用户ID-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+	</resultMap>
+
+</mapper>

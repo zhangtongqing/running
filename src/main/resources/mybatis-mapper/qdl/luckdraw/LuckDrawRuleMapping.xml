@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.luckdraw.dao.LuckDrawRuleDao">
+
+	<resultMap type="com.peipao.qdl.luckdraw.model.LuckDrawRule" id="luckDrawRule">
+        <id     property="ruleId"        column="rule_id" />        <!--主键ID-->
+        <result property="activityId"    column="activity_id" />    <!--活动主键ID-->
+        <result property="shareImg"      column="share_img" />      <!--活动分享海报-->
+        <result property="userDayLimit"  column="user_day_limit" /> <!--单日同一用户中奖次数上限-->
+        <result property="colligateRate" column="colligate_rate" /> <!-- 综合中奖率-->
+        <result property="createUserId"  column="create_user_id" /> <!-- 创建用户ID-->
+        <result property="createTime"    column="create_time" />    <!--创建时间-->
+        <result property="updateTime"    column="update_time" />    <!-- 更新时间-->
+        <result property="updateUserId"  column="update_user_id" /> <!--更新用户ID-->
+        <result property="logicDelete"   column="logic_delete" />   <!-- 逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+    </resultMap>
+
+
+    <insert id="addLuckDrawRule">
+        <selectKey resultType="java.lang.Long" order="AFTER" keyProperty="ruleId">
+            SELECT last_insert_id() AS ruleId
+        </selectKey>
+        insert into running.t_luck_draw_rule(
+        activity_id,luckType,luckLimit,share_img,user_day_limit, colligate_rate, create_user_id,create_time,update_time, update_user_id, logic_delete
+        ) values(
+        #{activityId},#{luckType},#{luckLimit},#{shareImg},#{userDayLimit},#{colligateRate},#{createUserId},#{createTime},#{updateTime},#{updateUserId},0
+        );
+    </insert>
+
+    <select id="getLuckDrawById" resultMap="luckDrawRule">
+        SELECT rule_id, activity_id, share_img, user_day_limit, colligate_rate, create_user_id, create_time, update_user_id, update_time, logic_delete
+        FROM running.t_luck_draw_rule WHERE rule_id = #{ruleId} AND logic_delete = 0 LIMIT 1
+    </select>
+
+    <update id="updateLuckDrawRule">
+        update running.t_luck_draw_rule
+        <set>
+            <if test="shareImg != null and shareImg != ''">
+                share_img = #{shareImg},
+            </if>
+            <if test="userDayLimit != null ">
+                user_day_limit = #{userDayLimit},
+            </if>
+            <if test="luckType != null ">
+                luckType = #{luckType},
+            </if>
+            <if test="luckLimit != -1 ">
+                luckLimit = #{luckLimit},
+            </if>
+            <if test="colligateRate != null ">
+                colligate_rate = #{colligateRate},
+            </if>
+            <if test="updateTime != null ">
+                update_time = #{updateTime},
+            </if>
+            <if test="updateUserId != null ">
+                update_user_id = #{updateUserId},
+            </if>
+        </set>
+        where rule_id = #{ruleId}
+    </update>
+
+    <select id="getLuckDrawRuleByActivityId" resultMap="luckDrawRule">
+        SELECT * FROM running.t_luck_draw_rule WHERE activity_id=#{activityId} AND logic_delete=#{logicDelete} LIMIT 1
+    </select>
+
+    <update id="logicDeleteLuckDrawRuleByActivityId">
+        UPDATE running.t_luck_draw_rule
+        SET
+            logic_delete=#{logicDelete},
+            update_user_id=#{updateUserId},
+            update_time=#{updateTime}
+        WHERE activity_id=#{activityId}
+    </update>
+
+</mapper>

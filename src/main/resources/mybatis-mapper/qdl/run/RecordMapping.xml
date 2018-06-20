@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.running.dao.RecordDao">
+	<!--APP端 查询个人运动记录-->
+	<!--<select id="getMyRunningRecord" resultType="map">-->
+		<!--SELECT-->
+			<!--tr.running_record_id as runningRecordId,-->
+			<!--tr.activity_id as activityId,-->
+			<!--ifnull(tr.duration_str, '') as durationStr,-->
+			<!--TRUNCATE((ifnull(tr.kilometeor_count, 0) + ifnull(tm.running_length, 0)), 2) as kilometeorCount,-->
+			<!--if(tr.activity_id=0, tr.type, ${activityRunType}) as type,-->
+			<!--ifnull(tr.equally_pace, '') as equallyPace,-->
+			<!--tr.is_effective as isEffective,-->
+			<!--tr.invalid_reason as invalidReason,-->
+			<!--DATE_FORMAT(tr.start_date, '%Y-%m-%d %H:%i') as startDate,-->
+			<!--ifnull(tr.thumb_url, '') as thumbUrl,-->
+			<!--tr.node_status as nodeStatus,-->
+			<!--tr.`status`-->
+		<!--FROM running.t_running_record tr-->
+		<!--LEFT JOIN running.t_compensate tm on tr.running_record_id=tm.running_record_id and tr.user_id=tm.user_id-->
+		<!--WHERE tr.user_id=#{userId}-->
+	    <!--AND tr.semester_id=#{semesterId}-->
+		<!--ORDER BY tr.start_date desc-->
+	<!--</select>-->
+
+	<select id="getMyRunningRecord" resultType="map">
+		SELECT
+			tr.running_record_id as runningRecordId,
+			tr.activity_id as activityId,
+			ifnull(tr.duration_str, '') as durationStr,
+			FORMAT(ifnull(tr.kilometeor_count, 0), 2) as kilometeorCount,
+			if(tr.activity_id=0, type, 100) as type,
+			ifnull(tr.equally_pace, '') as equallyPace,
+			tr.is_effective as isEffective,
+			ifnull(tr.invalid_reason, '') as invalidReason,
+			DATE_FORMAT(tr.start_date, '%Y-%m-%d %H:%i') as startDate,
+			ifnull(tr.thumb_url, '') as thumbUrl,
+			tr.node_status as nodeStatus,
+			tr.`status`,
+			TRUNCATE(ifnull(tr.valid_kilometeor_count,0),2) as validKilometeor,
+			TRUNCATE(IFNULL((
+			   case
+				   when tr.type = 1 then tm.running_count
+				   when tr.type = 4 then tm.running_length
+				   when tr.type = 100 then (tr.running_score + ifnull(tm.compensate_score, 0))
+			   end
+		   ), 0),2) as compensateItem
+		FROM running.t_running_record tr
+		LEFT JOIN running.t_compensate tm ON tr.running_record_id=tm.running_record_id AND tm.running_record_id is not NULL and tm.user_id=#{userId}
+		WHERE tr.user_id=#{userId}
+		ORDER BY tr.start_date desc
+	</select>
+	<!--AND semester_id=#{semesterId} 查询所有学期的数据-->
+
+
+	<!-- PC学生个人主页-运动数据列表-->
+	<!--跑步类型  跑步里程（公里）  开始时间  结束时间  跑步时长  平均配速（分钟/公里） 跑步轨迹  成绩-->
+	<select id="getStudentRunningList" resultType="java.util.Map">
+        SELECT
+            t.running_record_id as `key`,
+            t.running_record_id as runningRecordId,
+            t.type,
+			TRUNCATE(t.kilometeor_count,2) as kilometeorCount,
+			TRUNCATE(t.valid_kilometeor_count,2) as validKilometeorCount,
+            t.start_date as startDate,
+            t.end_date as endDate,
+            t.duration_str as durationStr,
+            t.equally_pace as equallyPace,
+			ifnull(c.running_count,0) as compensateRunningCount,
+			TRUNCATE(ifnull(c.running_length,0),2) as compensateRunningLength
+        FROM running.t_running_record t
+        LEFT JOIN running.t_compensate c on t.running_record_id=c.running_record_id
+        WHERE t.semester_id=#{semesterId} and t.is_effective=#{isEffective} and t.user_id=#{userId} and t.activity_id=0
+        <if test="type != null and type > 0" >
+            AND t.type=#{type}
+        </if>
+	</select>
+
+
+	<!-- PC 个人主页-跑步活动数据列表-->
+	<select id="getStudentActivityRunningList" resultType="java.util.Map">
+		SELECT
+			t.running_record_id as `key`,
+			t.running_record_id as runningRecordId,
+			a.`name` as activityName,
+			t.type,
+			t.kilometeor_count as kilometeorCount,
+			t.start_date as startDate,
+			t.end_date as endDate,
+			t.duration_str as durationStr,
+			t.equally_pace as equallyPace,
+			if(t.invalid_reason is null, ROUND(ifnull(t.kilometeor_count,0),2), ROUND(ifnull(c.running_length,0),2)) as score
+		FROM running.t_running_record t
+		LEFT JOIN running.t_compensate c on t.running_record_id=c.running_record_id
+		LEFT JOIN running.t_activity a on t.activity_id=a.activity_id
+		WHERE t.semester_id=#{semesterId}
+		AND t.is_effective=#{isEffective}
+        AND t.user_id=#{userId}
+	    AND t.activity_id>0
+	</select>
+
+	<!--个人晨练记录列表-->
+	<select id="getMyMorningExercisesRecord" resultType="java.util.Map">
+		SELECT
+			t.duration_str AS durationStr,
+			DATE_FORMAT(t.start_date, '%Y/%m/%d %H:%i')  AS startDate
+		FROM
+			running.t_morning_train_record t
+		WHERE
+			t.user_id = #{userId}
+		AND t.semester_id = #{semesterId}
+		<if test="isEffective == 88">
+			and t.is_effective = #{isEffective}
+		</if>
+		<if test="isEffective == -1">
+			and t.is_effective != 88
+		</if>
+		ORDER BY t.start_date desc
+
+	</select>
+</mapper>

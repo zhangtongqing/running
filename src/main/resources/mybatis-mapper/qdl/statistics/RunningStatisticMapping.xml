@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.statistics.dao.RunningStatisticDao">
+
+    <resultMap type="com.peipao.qdl.statistics.model.UserStatistic" id="runningStatistic">
+        <id property="statisticId" column="statistic_id"/><!--主键ID-->
+        <result property="userId" column="user_id"/><!--userId-->
+        <result property="schoolId" column="school_id"/><!--学校Id-->
+        <result property="semesterId" column="semester_id"/><!--学期Id-->
+
+        <result property="morningRunningCount" column="morning_running_count" /><!--晨跑  次数-->
+        <result property="morningRunningLength" column="morning_running_length"/><!--晨跑有效里程-->
+        <result property="morningRunningRealLength" column="morning_running_real_length"/><!--晨跑实际里程-->
+
+        <result property="freeRunningCount" column="free_running_count"/><!--自由跑-->
+        <result property="freeRunningLength" column="free_running_length"/><!--自由跑有效里程-->
+        <result property="freeRunningRealLength" column="free_running_real_length"/><!--自由跑实际里程-->
+
+        <result property="activityRunningCount" column="activity_running_count"/><!--活动-->
+        <result property="activityRunningLength" column="activity_running_length"/><!--跑步类活动有效里程-->
+        <result property="activityRunningRealLength" column="activity_running_real_length"/>
+        <result property="activityRunningScore" column="activity_running_score"/>
+    </resultMap>
+
+    <!--app首页学期目标完成情况-->
+    <select id="getMyCurrentStatistic" resultType="map">
+        SELECT
+            convert((ifnull(morning_running_count,0)+ifnull(compensate_morning_running_count,0)),decimal(12,0)) as morningRunningCount,
+            FORMAT((ifnull(free_running_length,0)+ifnull(compensate_free_running_length,0)), 2) as freeRunningLength,
+            ifnull(morning_train_count, 0) AS morningTrainCount
+        FROM running.t_user_statistic
+        WHERE semester_id = #{semesterId}
+        AND user_id = #{userId}
+        ORDER BY statistic_id DESC
+        LIMIT 1
+    </select>
+
+    <!--数据中心 (自由跑计分里程  晨跑有效次数  活动得分  晨练有效次数)-->
+    <!--TRUNCATE((morning_running_real_length + free_running_real_length + activity_running_real_length), 2) as realLength-->
+    <select id="getMyStatistics" resultType="map">
+        SELECT
+            ts.semester_year as semesterYear, ts.semester_type as semesterType,
+            convert((ifnull(us.morning_running_count,0)+ifnull(us.compensate_morning_running_count,0)),decimal(12,0)) as morningRunningCount,
+            TRUNCATE((ifnull(us.activity_running_score,0)+ifnull(us.compensate_activity_score,0)), 2) as activityRunningScore,
+            TRUNCATE((ifnull(us.free_running_length,0)+ifnull(us.compensate_free_running_length,0)), 2) as runningLength,
+            ifnull(us.morning_train_count,0) as morningTrainCount
+        FROM running.t_user_statistic us
+        LEFT JOIN t_semester ts ON us.semester_id=ts.semester_id and ts.school_id=#{schoolId}
+        WHERE us.user_id=#{userId}
+        ORDER BY us.semester_id
+    </select>
+
+    <!--查询学生综合成绩 (自由跑计分里程  晨跑有效次数  活动得分  晨练有效次数) 原始  补偿  合计-->
+    <select id="getStudentStatistics" resultType="map">
+        SELECT
+            ts.semester_year as semesterYear, ts.semester_type as semesterType,
+            convert((ifnull(us.morning_running_count,0)),decimal(12,0)) as morningRunningCount,
+            convert((ifnull(us.compensate_morning_running_count,0)),decimal(12,0)) as compensateMorningRunningCount,
+            TRUNCATE((ifnull(us.activity_running_score,0)), 2) as activityRunningScore,
+            TRUNCATE((ifnull(us.compensate_activity_score,0)), 2) as compensateActivityRunningScore,
+            TRUNCATE((ifnull(us.free_running_length,0)), 2) as runningLength,
+            TRUNCATE((ifnull(us.compensate_free_running_length,0)), 2) as compensateRunningLength,
+            ifnull(us.morning_train_count,0) as morningTrainCount
+        FROM running.t_semester ts
+            LEFT JOIN running.t_user_statistic us ON us.semester_id=ts.semester_id and us.user_id=#{userId} AND us.semester_id = #{semesterId}
+        WHERE ts.semester_id = #{semesterId}
+        ORDER BY us.semester_id;
+    </select>
+
+    <!--统计 晨跑达标人数统计-->
+    <select id="getMorningRunningTargetStatistics" resultType="java.lang.Integer">
+        SELECT COUNT(*) as num from (
+            SELECT convert((ifnull(morning_running_count,0)+ifnull(compensate_morning_running_count,0)),decimal(12,0)) as morningRunningCount
+            FROM running.t_user_statistic
+            WHERE semester_id = #{semesterId}
+            <![CDATA[AND (morning_running_count+compensate_morning_running_count) >= #{target}]]>
+            <if test="courseArray != null and courseArray != ''">
+                and user_id in (
+                    SELECT tu.user_id from t_user tu where tu.course_id in (${courseArray})
+                )
+            </if>
+        ) t
+    </select>
+
+    <!-- 首页统计 晨跑次数,里程统计 -->
+    <select id="getMorningRunningStatistics" resultType="map">
+        SELECT
+            convert(SUM((ifnull(morning_running_count,0)+ifnull(compensate_morning_running_count,0))),decimal(12,0)) as morningRunningCount,
+            SUM(TRUNCATE(ifnull(morning_running_length,0) + ifnull(compensate_morning_running_length,0),2)) as morningRunningLength
+        FROM running.t_user_statistic
+        WHERE semester_id = #{semesterId}
+        <if test="courseArray != null and courseArray != ''">
+            and user_id in (SELECT tu.user_id from t_user tu where tu.course_id in (${courseArray}))
+        </if>
+    </select>
+
+    <!--统计 自由跑达标人数统计-->
+    <select id="getFreeRunningTargetStatistics" resultType="java.lang.Integer">
+        SELECT COUNT(*) as num from (
+            SELECT TRUNCATE((ifnull(free_running_length,0)+ifnull(compensate_free_running_length,0)), 2) as freeRunningLength
+            FROM running.t_user_statistic
+            WHERE semester_id = #{semesterId}
+            <![CDATA[AND (free_running_length+compensate_free_running_length) >= #{target}]]>
+            <if test="courseArray != null and courseArray != ''">
+                and user_id in (
+                SELECT tu.user_id from t_user tu where tu.course_id in (${courseArray})
+                )
+            </if>
+        ) t
+    </select>
+
+    <!--统计 自由跑次数，里程统计-->
+    <select id="getFreeRunningStatistics" resultType="map">
+        SELECT
+            convert(SUM(ifnull(free_running_count,0) + ifnull(compensate_free_running_count,0)),decimal(12,0)) as freeRunningCount,
+            SUM(TRUNCATE((ifnull(free_running_length,0) + ifnull(compensate_free_running_length,0)), 2)) as freeRunningLength
+        FROM running.t_user_statistic
+        WHERE semester_id = #{semesterId}
+        <if test="courseArray != null and courseArray != ''">
+            and user_id in (SELECT tu.user_id from t_user tu where tu.course_id in (${courseArray}))
+        </if>
+    </select>
+
+
+    <!--教务端成绩list-->
+    <select id="getMyStdentTargetList" resultType="map">
+        SELECT
+            tt.userId,
+            ifnull(tt.username, '') as username,
+            ifnull(tt.studentNo, '') as studentNo,
+            ifnull(tt.courseName, '') as courseName,
+            ifnull(tt.classname, '') as classname,
+            tt.morningRunningCount,
+            tt.freeRunningLength
+        from (
+            SELECT
+                tu.user_id as userId, tu.username, tu.student_no as studentNo,tu.classname,tu.course_id as courseId,
+                tc.`name` as courseName,
+                convert((ifnull(ts.morning_running_count,0)+ifnull(ts.compensate_morning_running_count,0)),decimal(12,0)) as morningRunningCount,
+                TRUNCATE((ifnull(ts.free_running_length,0)+ifnull(ts.compensate_free_running_length,0)), 2) as freeRunningLength
+            FROM running.t_user tu
+            LEFT JOIN running.t_user_statistic ts ON tu.user_id=ts.user_id AND ts.semester_id=#{semesterId}
+            LEFT JOIN running.t_course tc on tu.course_id=tc.course_id AND tc.semester_id=#{semesterId}
+            WHERE tu.school_id=#{schoolId}
+            <if test="courseArray != null and courseArray != ''">
+              AND tu.course_id in(${courseArray})
+            </if>
+            <if test="queryType != null and queryType != '' and queryString != null and queryString != ''">
+                AND tu.${queryType} LIKE CONCAT('%',#{queryString},'%')
+            </if>
+        ) tt
+        <if test="sortName != null and sortType != null">
+            order by tt.${sortName} ${sortType}, tt.userId ASC
+        </if>
+    </select>
+
+    <!--用户中心获取真实公里数据-->
+    <select id="getRunRealData" resultType="map">
+        SELECT
+            TRUNCATE((ifnull(us.morning_running_real_length,0)), 2) as morningRunRealLength,
+            TRUNCATE((ifnull(us.activity_running_real_length,0)), 2) as activityRunRealLength,
+						TRUNCATE((ifnull(us.free_running_real_length,0)), 2) as freeRunRealLength
+        FROM running.t_user_statistic us
+        LEFT JOIN t_semester ts ON us.semester_id=ts.semester_id and ts.school_id=#{schoolId}
+        WHERE us.user_id=#{userId}
+        ORDER BY us.semester_id
+    </select>
+
+    <!--用户过去七天的运动 有效里程 趋势， 有效里程包括 1=自由跑，4=晨跑，100=活动跑步的有效总里程-->
+    <select id="get7DayRunningLength" resultType="map">
+        SELECT SUM(IFNULL(valid_kilometeor_count,0) + IFNULL(running_length,0)) as count  , tt.`day` from (
+        SELECT
+        t.running_record_id, IFNULL(t.valid_kilometeor_count,0) as valid_kilometeor_count , IFNULL(tc.running_length,0) as running_length ,DATE_FORMAT(t.end_date,'%Y-%m-%d') as 'day'
+        FROM
+        t_running_record t , t_compensate tc where
+        t.running_record_id = tc.running_record_id
+        and t.user_id = #{userId}
+        and t.type = tc.running_type
+        and t.semester_id = #{semesterId}
+        and t.is_effective=#{isEffective}
+        and t.type in(1,4,100)
+        <![CDATA[and t.end_date >= #{beginTime}]]>
+        <![CDATA[and t.end_date <= #{endTime}]]>
+        ) tt
+        GROUP BY tt.`day` DESC
+    </select>
+
+
+</mapper>

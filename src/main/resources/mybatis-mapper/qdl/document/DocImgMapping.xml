@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--/**-->
+<!--* 方法名称：DocImgMapping-->
+<!--* 功能描述：DocImgMapping-->
+<!--* 作者：Na Jun-->
+<!--* 版本：1.0-->
+<!--* 创建日期：2017/10/19 09:00-->
+<!--* 修订记录：-->
+<!--*/-->
+<!--发现-文章标题图片-->
+<mapper namespace="com.peipao.qdl.document.dao.DocImgDao">
+	<resultMap type="com.peipao.qdl.document.model.DocImg" id="docImg">
+		<id property="docImgId" column="doc_img_id" /><!--主键ID-->
+		<result property="docId" column="doc_id" /><!--文章主键ID-->
+		<result property="imgUrl" column="img_url" /><!--图片地址-->
+		<result property="sortNum" column="sort_num" /><!--图片排序号-->
+	</resultMap>
+
+	<select id="getImgImgUrlListByDocId" resultType="map">
+		SELECT doc_id AS docId,img_url as imgUrl
+		FROM running.t_doc_img
+		<if test="docIdList != null">
+			<foreach collection="docIdList" item="item" index="index" open="WHERE (" close=")" separator="OR">
+				doc_id=#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<insert id="insertDocImgByBatch" parameterType="com.peipao.qdl.document.model.DocImg">
+		INSERT INTO running.t_doc_img( doc_id,img_url,sort_num )
+		VALUES
+		<foreach collection="docImgList" item="item" index="index" separator=",">
+			(
+			#{docId},
+			#{item.imgUrl},
+			#{item.sortNum}
+			)
+		</foreach>
+	</insert>
+
+	<delete id="deleteDocImg">
+		DELETE FROM running.t_doc_img WHERE doc_id = #{docId}
+	</delete>
+
+</mapper>

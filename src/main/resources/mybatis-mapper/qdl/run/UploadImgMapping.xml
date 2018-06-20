@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.running.dao.UploadImgDao">
+
+	<resultMap type="com.peipao.qdl.running.model.UploadImg" id="uploadImg">
+		<id property="imgId" column="img_id" />
+		<result property="imgUrl" column="img_url" />
+		<result property="imgDesc" column="img_desc" />
+		<result property="imgStatus" column="img_status" />
+		<result property="modelType" column="model_type" />
+        <result property="school_id" column="schoolId" />
+        <result property="uploadTime" column="upload_time" />
+		<result property="uploadUserId" column="upload_user_id" />
+	</resultMap>
+
+    <resultMap type="java.util.Map" id="uploadImgVo">
+        <id property="imgId" column="img_id" />
+        <result property="imgUrl" column="img_url" />
+    </resultMap>
+    <sql id="column_geturl" >
+        img_id as runningRuleImgId,
+        img_url as imgPath
+    </sql>
+	<select id="getUploadImgListBySchoolIdAndType" resultMap="uploadImgVo">
+        SELECT <include refid="column_geturl" /> from running.t_upload_img
+        WHERE 1 = 1
+        <if test="schoolId != null and schoolId != 0">
+            AND school_Id = #{schoolId}
+        </if>
+        AND model_type=#{modelType}
+      AND img_status=#{imgStatus}
+	</select>
+</mapper>

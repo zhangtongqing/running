@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.statistics.dao.UserStatisticDao">
+
+	<resultMap type="com.peipao.qdl.statistics.model.UserStatistic" id="userStatistic">
+		<id property="statisticId" column="statistic_id" /><!--主键ID-->
+		<result property="userId" column="user_id" /><!--userId-->
+		<result property="schoolId" column="school_id" /><!--学校Id-->
+		<result property="semesterId" column="semester_id" /><!--学期Id-->
+
+		<result property="morningRunningCount" column="morning_running_count" /><!--晨跑  次数-->
+		<result property="morningRunningLength" column="morning_running_length" /><!--晨跑有效里程-->
+		<result property="morningRunningRealLength" column="morning_running_real_length" /><!--晨跑实际里程-->
+
+		<result property="freeRunningCount" column="free_running_count" /><!--自由跑-->
+		<result property="freeRunningLength" column="free_running_length" /><!--自由跑有效里程-->
+		<result property="freeRunningRealLength" column="free_running_real_length" /><!--自由跑实际里程-->
+
+		<result property="activityRunningCount" column="activity_running_count" /><!--活动-->
+		<result property="activityRunningLength" column="activity_running_length" />
+        <result property="activityRunningScore" column="activity_running_score" />
+        <result property="activityRunningRealLength" column="activity_running_real_length" />
+		<result property="activityRewardDuration" column="activity_reward_duration" /><!--活动置换课时-->
+
+		<result property="attendanceCount" column="attendance_count" /><!--考勤次数-->
+		<result property="attendanceScore" column="attendance_score" /><!--课程考勤得分-->
+		<result property="attendanceDuration" column="attendance_duration" /><!--学生上课课时-->
+
+		<result property="compensateFreeRunningCount" column="compensate_free_running_count" /><!--补偿自由跑次数-->
+		<result property="compensateFreeRunningLength" column="compensate_free_running_length" /><!--补偿自由跑里程-->
+		<result property="compensateMorningRunningCount" column="compensate_morning_running_count" /><!--补偿晨跑次数-->
+		<result property="compensateMorningRunningLength" column="compensate_morning_running_length" /><!--补偿晨跑里程-->
+		<result property="compensateActivityScore" column="compensate_activity_score" /><!--补偿活动分数-->
+		<result property="compensateActivityCount" column="compensate_activity_count" /><!--补偿活动次数-->
+
+		<result property="morningTrainCount" column="morning_train_count" /><!--晨练次数-->
+
+		<!--<result property="isLock" column="is_lock" />&lt;!&ndash;本学期数据是否锁定不再更改&ndash;&gt;-->
+	</resultMap>
+
+	<select id="getByUserIdAndSemesterId" resultMap="userStatistic">
+		SELECT
+			statistic_id as statisticId,
+			user_id as userId,
+			school_id as schoolId,
+			semester_id as semesterId,
+
+			morning_running_count as morningRunningCount,
+			morning_running_length as morningRunningLength,
+			morning_running_real_length as morningRunningRealLength,
+
+			free_running_count as freeRunningCount,
+			free_running_length as freeRunningLength,
+			free_running_real_length as freeRunningRealLength,
+
+			activity_running_count as activityRunningCount,
+			activity_running_length as activityRunningLength,
+			activity_running_real_length as activityRunningRealLength,
+			activity_running_score as activityRunningScore,
+			activity_reward_duration as activityRewardDuration,
+
+			attendance_count as attendanceCount,
+			attendance_score as attendanceScore,
+			attendance_duration as attendanceDuration,
+			compensate_free_running_count as compensateFreeRunningCount,
+			compensate_free_running_length as compensateFreeRunningLength,
+			compensate_morning_running_count as compensateMorningRunningCount,
+			compensate_morning_running_length as compensate_morning_running_length,
+			compensate_activity_score as compensateActivityScore,
+			compensate_activity_count as compensateActivityCount,
+			morning_train_count as morningTrainCount
+
+		FROM running.t_user_statistic WHERE user_id=#{userId} and semester_id=#{semesterId}
+	</select>
+
+
+	<select id="getStudentScoreListTotal" resultType="java.lang.Long">
+		SELECT
+			count(u.user_id)
+		FROM running.t_user u
+			LEFT JOIN running.t_user_statistic s ON u.user_id=s.user_id and s.semester_id=#{semesterId}
+		where 1=1
+		<choose>
+			<when test="courseId != null and courseId >0">
+				AND u.course_id =#{courseId} AND u.status = 1 and u.user_type = 1
+			</when>
+			<otherwise>
+				AND u.course_id is null and u.status = 1 and u.user_type = 1 and u.school_id = #{schoolId}
+			</otherwise>
+		</choose>
+	</select>
+
+
+
+
+	<insert id="insertUserStatistic">
+		insert into running.t_user_statistic
+		<trim prefix="(" suffix=")" suffixOverrides="," >
+			<if test="userId != null and userId != ''">user_id,</if>
+			<if test="schoolId != null and schoolId != ''">school_id,</if>
+			<if test="semesterId != null and semesterId != ''">semester_id,</if>
+
+			<if test="morningRunningCount != null and morningRunningCount != ''">morning_running_count,</if>
+			<if test="morningRunningLength != null and morningRunningLength != ''">morning_running_length,</if>
+			<if test="morningRunningRealLength != null and morningRunningRealLength != ''">morning_running_real_length,</if>
+
+			<if test="freeRunningCount != null and freeRunningCount != ''">free_running_count,</if>
+			<if test="freeRunningLength != null and freeRunningLength != ''">free_running_length,</if>
+			<if test="freeRunningRealLength != null and freeRunningRealLength != ''">free_running_real_length,</if>
+
+			<if test="activityRunningCount != null and activityRunningCount != ''">activity_running_count,</if>
+			<if test="activityRunningLength != null and activityRunningLength != ''">activity_running_length,</if>
+			<if test="activityRunningRealLength != null and activityRunningRealLength != ''">activity_running_real_length,</if>
+			<if test="activityRunningScore != null and activityRunningScore != ''">activity_running_score,</if>
+			<if test="activityRewardDuration != null and activityRewardDuration != ''">activity_reward_duration,</if>
+
+			<if test="attendanceCount != null and attendanceCount != ''">attendance_count,</if>
+			<if test="attendanceScore != null and attendanceScore != ''">attendance_score,</if>
+			<if test="attendanceDuration != null and attendanceDuration != ''">attendance_duration,</if>
+
+
+            <if test="compensateFreeRunningCount != null and compensateFreeRunningCount != 0">compensate_free_running_count,</if>
+            <if test="compensateFreeRunningLength != null and compensateFreeRunningLength != 0">compensate_free_running_length,</if>
+            <if test="compensateMorningRunningCount != null and compensateMorningRunningCount != 0">compensate_morning_running_count,</if>
+            <if test="compensateMorningRunningLength != null and compensateMorningRunningLength != 0">compensate_morning_running_length,</if>
+            <if test="compensateActivityScore != null and compensateActivityScore != 0">compensate_activity_score,</if>
+            <if test="compensateActivityCount != null and compensateActivityCount != 0">compensate_activity_count,</if>
+
+			<if test="morningTrainCount != null and morningTrainCount > 0">morning_train_count,</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides="," >
+			<if test="userId != null and userId != ''">#{userId},</if>
+			<if test="schoolId != null and schoolId != ''">#{schoolId},</if>
+			<if test="semesterId != null and semesterId != ''">#{semesterId},</if>
+			<if test="morningRunningCount != null and morningRunningCount != ''">#{morningRunningCount},</if>
+			<if test="morningRunningLength != null and morningRunningLength != ''">#{morningRunningLength},</if>
+			<if test="morningRunningRealLength != null and morningRunningRealLength != ''">#{morningRunningRealLength},</if>
+
+			<if test="freeRunningCount != null and freeRunningCount != ''">#{freeRunningCount},</if>
+			<if test="freeRunningLength != null and freeRunningLength != ''">#{freeRunningLength},</if>
+			<if test="freeRunningRealLength != null and freeRunningRealLength != ''">#{freeRunningRealLength},</if>
+
+			<if test="activityRunningCount != null and activityRunningCount != ''">#{activityRunningCount},</if>
+			<if test="activityRunningLength != null and activityRunningLength != ''">#{activityRunningLength},</if>
+			<if test="activityRunningRealLength != null and activityRunningRealLength != ''">#{activityRunningRealLength},</if>
+			<if test="activityRunningScore != null and activityRunningScore != ''">#{activityRunningScore},</if>
+			<if test="activityRewardDuration != null and activityRewardDuration != ''">#{activityRewardDuration},</if>
+
+			<if test="attendanceCount != null and attendanceCount != ''">#{attendanceCount},</if>
+			<if test="attendanceScore != null and attendanceScore != ''">#{attendanceScore},</if>
+			<if test="attendanceDuration != null and attendanceDuration != ''">#{attendanceDuration},</if>
+
+            <if test="compensateFreeRunningCount != null and compensateFreeRunningCount != 0">#{compensateFreeRunningCount},</if>
+            <if test="compensateFreeRunningLength != null and compensateFreeRunningLength != 0">#{compensateFreeRunningLength},</if>
+            <if test="compensateMorningRunningCount != null and compensateMorningRunningCount != 0">#{compensateMorningRunningCount},</if>
+            <if test="compensateMorningRunningLength != null and compensateMorningRunningLength != 0">#{compensateMorningRunningLength},</if>
+            <if test="compensateActivityScore != null and compensateActivityScore != 0">#{compensateActivityScore},</if>
+            <if test="compensateActivityCount != null and compensateActivityCount != 0">#{compensateActivityCount},</if>
+
+            <if test="morningTrainCount != null and morningTrainCount > 0">#{morningTrainCount},</if>
+		</trim>
+	</insert>
+
+    <update id="updateUserStatistic">
+        update running.t_user_statistic
+        <set>
+            <if test="userId != null and userId != ''">user_id = #{userId},</if>
+            <if test="schoolId != null and schoolId != ''">school_id = #{schoolId},</if>
+            <if test="semesterId != null and semesterId != ''">semester_id = #{semesterId},</if>
+            <if test="morningRunningCount != null and morningRunningCount != ''">morning_running_count = #{morningRunningCount},</if>
+            <if test="morningRunningLength != null and morningRunningLength != ''">morning_running_length = #{morningRunningLength},</if>
+            <if test="morningRunningRealLength != null and morningRunningRealLength != ''">morning_running_real_length = #{morningRunningRealLength},</if>
+
+            <if test="freeRunningCount != null and freeRunningCount != ''">free_running_count = #{freeRunningCount},</if>
+            <if test="freeRunningLength != null and freeRunningLength != ''">free_running_length = #{freeRunningLength},</if>
+            <if test="freeRunningRealLength != null and freeRunningRealLength != ''">free_running_real_length = #{freeRunningRealLength},</if>
+
+            <if test="activityRunningCount != null and activityRunningCount != ''">activity_running_count = #{activityRunningCount},</if>
+            <if test="activityRunningLength != null and activityRunningLength != ''">activity_running_length = #{activityRunningLength},</if>
+            <if test="activityRunningRealLength != null and activityRunningRealLength != ''">activity_running_real_length = #{activityRunningRealLength},</if>
+            <if test="activityRunningScore != null and activityRunningScore != ''">activity_running_score = #{activityRunningScore},</if>
+            <if test="activityRewardDuration != null and activityRewardDuration != ''">activity_reward_duration = #{activityRewardDuration},</if>
+
+            <if test="attendanceCount != null and attendanceCount != ''">attendance_count = #{attendanceCount},</if>
+            <if test="attendanceScore != null and attendanceScore != ''">attendance_score = #{attendanceScore},</if>
+            <if test="attendanceDuration != null and attendanceDuration != ''">attendance_duration = #{attendanceDuration},</if>
+
+            <if test="compensateFreeRunningCount != null">compensate_free_running_count=#{compensateFreeRunningCount},</if>
+            <if test="compensateFreeRunningLength != null">compensate_free_running_length=#{compensateFreeRunningLength},</if>
+            <if test="compensateMorningRunningCount != null">compensate_morning_running_count=#{compensateMorningRunningCount},</if>
+            <if test="compensateMorningRunningLength != null">compensate_morning_running_length=#{compensateMorningRunningLength},</if>
+            <if test="compensateActivityScore != null">compensate_activity_score=#{compensateActivityScore},</if>
+            <if test="compensateActivityCount != null">compensate_activity_count=#{compensateActivityCount},</if>
+
+            <if test="morningTrainCount != null and morningTrainCount > 0">morning_train_count=#{morningTrainCount},</if>
+        </set>
+        where statistic_id = #{statisticId}
+    </update>
+
+
+	<select id="getStudentScoreInfoList" resultType="map">
+		SELECT
+			u.user_id as userId, u.username, ifnull(u.student_no, '') as studentNo, u.mobile,
+			IFNULL(u.classname,'') as classname, IFNULL(tc.`name`,'') as courseName,
+			ifnull(tt.morningRunningCount, 0) as morningRunningCount,
+			TRUNCATE(ifnull(tt.freeRunningLength, 0), 2) as freeRunningLength,
+			TRUNCATE(ifnull(tt.schoolActivityScore, 0), 2) as schoolActivityScore,
+            ifnull(tt.morningTrainCount,0) as morningTrainCount,
+            ifnull(tt.attendanceCount,0) as attendanceCount
+		FROM running.t_user u LEFT JOIN (
+			SELECT
+				t.*
+			from (
+				SELECT
+					ts.user_id as userId,
+					(
+						ifnull(ts.morning_running_count, 0)+
+						ifnull(ts.compensate_morning_running_count, 0)
+					) as morningRunningCount,
+
+					(
+						ifnull(ts.free_running_length, 0)+
+						ifnull(ts.compensate_free_running_length, 0)
+					)  as freeRunningLength,
+
+					(
+						ifnull(ts.activity_running_score, 0)+
+						ifnull(ts.compensate_activity_score, 0)
+					) as schoolActivityScore,
+                    ts.morning_train_count as morningTrainCount,
+                    ts.attendance_count as attendanceCount
+				FROM running.t_user_statistic ts
+				WHERE ts.semester_id=#{semesterId}
+				<if test="studentId != null">
+					and ts.user_id=#{studentId}
+				</if>
+            ) t
+		) tt ON u.user_id=tt.userId
+		LEFT JOIN t_course tc ON u.course_id=tc.course_id and tc.semester_id=#{semesterId}
+		where u.school_id=#{schoolId}
+		and u.user_type=1
+		and u.`status`=1
+		<if test="studentId != null">
+			and u.user_id=#{studentId}
+		</if>
+		<if test="queryType != null and queryType != '' and queryString != null and queryString != ''">
+			AND u.${queryType} LIKE CONCAT('%',#{queryString},'%')
+		</if>
+		<if test="courseArray != null and courseArray != ''">
+			AND (u.course_id in (${courseArray})
+			<!--课程里面用户选择了待定-->
+			<if test="unselectCourse != null and unselectCourse != ''">
+				OR u.course_id is null
+			</if>
+			)
+		</if>
+		<if test="classnameArray != null and classnameArray != ''">
+			AND ( u.classname in (${classnameArray})
+			<!--班级里面用户选择了未指定-->
+			<if test="unselectClassname != null and unselectClassname != ''">
+				OR u.classname is null OR u.classname = ''
+			</if>
+			)
+		</if>
+		<if test="sortName != null and sortType != null">
+			ORDER BY ${sortName} ${sortType}
+		</if>
+	</select>
+
+	<select id="getStudentScoreInfoListExport" resultType="map">
+		SELECT
+			u.user_id as `key`,
+			u.user_id as userId,
+			u.username,
+			ifnull(u.student_no,'') as studentNo,
+			u.mobile,
+			ifnull(u.classname, '') as classname,
+			ifnull(tc.`name`,'') as courseName,
+			ifnull(TRUNCATE(tt.morningRunningLength, 2), 0) as morningRunningLengthAll,
+			ifnull(TRUNCATE(tt.morningRunningCount, 2),0) as morningRunningCount,
+			ifnull(TRUNCATE(tt.compensateMorningRunningCount, 2), 0) as compensateMorningRunningCount,
+			ifnull(TRUNCATE(tt.morningRunningCountAll, 2),0) as morningRunningCountAll,
+			ifnull(TRUNCATE(tt.freeRunningCount, 2),0) as freeRunningCount,
+			ifnull(TRUNCATE(tt.freeRunningLength, 2),0) as freeRunningLength,
+			ifnull(TRUNCATE(tt.compensateFreeRunningLength, 2),0) as compensateFreeRunningLength,
+			ifnull(TRUNCATE(tt.freeRunningLengthAll, 2),0) as freeRunningLengthAll,
+			ifnull(tt.schoolActivityCount,0) as schoolActivityCount,
+			ifnull(tt.schoolActivityScore,0) as schoolActivityScore,
+			ifnull(tt.compensateActivityScore,0) as compensateActivityScore,
+			ifnull(tt.schoolActivityScoreAll,0) as schoolActivityScoreAll,
+            ifnull(tt.morningTrainCount, 0) as morningTrainCount,
+            ifnull(tt.attendanceCount, 0) as attendanceCount
+		FROM running.t_user u LEFT JOIN (
+            SELECT
+                t.*
+            from (
+                SELECT
+                    ts.user_id as userId,
+                    -- 晨跑有效总里程
+                    (ifnull(ts.morning_running_length,0)+ifnull(ts.compensate_morning_running_length,0)) as morningRunningLength,
+                    -- 晨跑有效次数
+                    ts.morning_running_count  as morningRunningCount,
+                    -- 有效晨跑补偿次数
+                    ts.compensate_morning_running_count as compensateMorningRunningCount,
+                    -- 有效晨跑总次数
+                    (ifnull(ts.morning_running_count,0)+ifnull(ts.compensate_morning_running_count,0)) as morningRunningCountAll,
+                    -- 自由跑有效次数
+                    ts.free_running_count as freeRunningCount,
+                    -- 自由跑计分里程
+                    ts.free_running_length as freeRunningLength,
+                    -- 自由跑补偿计分里程
+                    ts.compensate_free_running_length as compensateFreeRunningLength,
+                    -- 自由跑计分总里程
+                    (ifnull(ts.free_running_length,0)+ifnull(ts.compensate_free_running_length,0)) as freeRunningLengthAll,
+                    -- 校方活动有效参与次数
+                    ts.activity_running_count as schoolActivityCount,
+                    -- 校方活动得分
+                    ts.activity_running_score as schoolActivityScore,
+                    -- 校方活动补偿得分
+                    ts.compensate_activity_score as compensateActivityScore,
+                    -- 校方活动总得分
+                    (ifnull(ts.activity_running_score,0)+ifnull(ts.compensate_activity_score,0)) as schoolActivityScoreAll,
+                    -- 晨练次数
+                    ts.morning_train_count as morningTrainCount,
+                    -- 上课次数
+                    ts.attendance_count as attendanceCount
+                FROM running.t_user_statistic ts
+                WHERE 1=1
+                and ts.semester_id=#{semesterId}
+                <if test="studentId != null and studentId != ''">
+                    and ts.user_id=#{studentId}
+                </if>
+            ) t
+		) tt ON u.user_id=tt.userId
+		LEFT JOIN running.t_course tc ON u.course_id=tc.course_id and tc.semester_id=#{semesterId}
+		where u.school_id=#{schoolId}
+		and u.user_type=1
+		and u.`status`=1
+		<if test="queryType != null and queryType != '' and queryString != null and queryString != ''">
+			AND u.${queryType} LIKE CONCAT('%',#{queryString},'%')
+		</if>
+		<if test="courseArray != null and courseArray != ''">
+			AND (u.course_id in (${courseArray})
+			<!--课程里面用户选择了待定-->
+			<if test="unselectCourse != null and unselectCourse != ''">
+				OR u.course_id is null
+			</if>
+			)
+		</if>
+		<if test="classnameArray != null and classnameArray != ''">
+			AND ( u.classname in (${classnameArray})
+			<!--班级里面用户选择了未指定-->
+			<if test="unselectClassname != null and unselectClassname != ''">
+				OR u.classname is null OR u.classname = ''
+			</if>
+			)
+		</if>
+		<if test="sortName != null and sortType != null">
+			ORDER BY ${sortName} ${sortType}
+		</if>
+	</select>
+
+
+	<update id="updateStatisticByCourseSign">
+      UPDATE  running.t_user_statistic SET attendance_count = attendance_count+(${attendanceCount})
+      WHERE user_id= #{userId} AND semester_id= #{semesterId} AND statistic_id= #{statisticId} AND attendance_count>0
+	</update>
+
+
+</mapper>

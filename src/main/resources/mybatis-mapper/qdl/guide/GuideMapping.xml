@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.guide.dao.GuideDao">
+
+	<resultMap type="com.peipao.qdl.guide.model.Guide" id="guide">
+		<id property="guideId" column="guide_id" />
+		<result property="title" column="title" />
+		<result property="keyword" column="keyword" />
+		<result property="createTime" column="create_time" />
+		<result property="createUserId" column="create_user_id" />
+		<result property="updateTime" column="update_time" />
+		<result property="updateUserId" column="update_user_id" />
+		<result property="logicDelete" column="logic_delete" />
+	</resultMap>
+
+	<select id="getGuideList" resultType="map">
+		SELECT guide_id guideId, title, keyword FROM running.t_guide t
+		where logic_delete = 0
+		<if test="title != null and title != ''">
+			and t.title LIKE CONCAT('%', #{title},'%')
+		</if>
+		ORDER BY guide_id desc
+	</select>
+
+	<select id="getGuideById" resultMap="guide">
+		select * FROM running.t_guide WHERE guide_id = #{guideId} and logic_delete = 0 limit 1
+	</select>
+
+	<update id="updateGuide">
+		UPDATE running.t_guide
+	    <set>
+			<if test="title != null and title != ''">
+				title = #{title},
+			</if>
+
+			<if test="keyword != null and keyword != ''">
+				keyword = #{keyword},
+			</if>
+			<if test="updateTime != null ">
+				update_time = #{updateTime},
+			</if>
+
+			<if test="updateUserId != null ">
+				update_user_id = #{updateUserId},
+			</if>
+		</set>
+		where guide_id = #{guideId}
+	</update>
+
+	<insert id="addGuide">
+		<selectKey resultType="java.lang.Long" order="AFTER" keyProperty="guideId">
+			SELECT last_insert_id() AS guideId
+		</selectKey>
+		insert into running.t_guide (title, keyword, create_user_id, create_time, update_user_id, update_time, logic_delete)
+		values (#{title},#{keyword},#{createUserId},#{createTime},#{updateUserId},#{updateTime}, 0);
+	</insert>
+
+	<delete id="deleteGuide">
+		update running.t_guide
+		set logic_delete = 1
+		where guide_id = #{guideId}
+	</delete>
+
+	<select id="getGuideByGuide" resultMap="guide">
+		SELECT * FROM running.t_guide WHERE logic_delete = 0
+		<if test="title != null and title != ''">
+			and title = #{title}
+		</if>
+		<if test="keyword != null and keyword != ''">
+			and keyword LIKE concat('%',#{keyword},'%')
+		</if>
+		LIMIT 1
+	</select>
+</mapper>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.runningrule.dao.RuleDao">
+
+	<resultMap type="com.peipao.qdl.runningrule.model.RunningRule" id="runningRule">
+		<id property="runningRuleId" column="running_rule_id" />            <!--主键ID-->
+		<result property="schoolId" column="school_id" />                   <!--所属学校ID-->
+		<result property="semesterId" column="semester_id" />               <!--学期ID-->
+		<result property="type" column="type" />                            <!--跑步类型-->
+        <result property="sportCountMax" column="sport_count_max" />        <!-- 每天运动次数上限 -->
+        <result property="getScoreType" column="get_score_type" />          <!--得分方式 枚举：1=按里程得分；2=按次数得分。默认1，按里程-->
+        <result property="hasRail" column="has_rail" />                     <!--是否开启围栏：1=开启；0=关闭,默认0，关闭围栏-->
+        <result property="speedMin" column="speed_min" />                   <!-- 最小配速 -->
+        <result property="speedMax" column="speed_max" />                   <!-- 最大配速 -->
+        <result property="validKiometerMin" column="valid_kiometer_min" />  <!-- 每次跑步计入有效里程范围最小值 -->
+        <result property="validKiometerMax" column="valid_kiometer_max" />  <!-- 每次跑步计入有效里程范围最大值 -->
+        <result property="startTime" column="start_time" />                 <!--跑步开始时间(在规定时间内跑步)-->
+        <result property="endTime" column="end_time" />                     <!--跑步结束时间(在规定时间内跑步)-->
+        <result property="target" column="target" />                        <!--学期目标-->
+        <result property="createTime" column="create_time" />               <!--本条规则记录创建时间-->
+        <result property="createUser" column="create_user" />               <!--修改人ID-->
+        <result property="isUse" column="is_use" />                         <!--是否启用0=关闭，1=启用-->
+	</resultMap>
+
+
+    <resultMap type="com.peipao.qdl.runningrule.model.vo.RunningRuleVo" id="runningRuleVo">
+        <result property="runningRuleId" column="running_rule_id" />        <!-- ID -->
+        <result property="sportCountMax" column="sport_count_max" />        <!-- 每天运动次数上限 -->
+        <result property="type" column="type" />                            <!--跑步类型-->
+        <result property="hasRail" column="has_rail" />                     <!--是否开启围栏：1=开启；0=关闭,默认0，关闭围栏-->
+        <result property="speedMin" column="speed_min" />                   <!-- 最小配速 -->
+        <result property="speedMax" column="speed_max" />                   <!-- 最大配速 -->
+        <result property="validKiometerMin" column="valid_kiometer_min" />  <!-- 每次跑步计入有效里程范围最小值 -->
+        <result property="validKiometerMax" column="valid_kiometer_max" />  <!-- 每次跑步计入有效里程范围最大值 -->
+        <result property="startTime" column="start_time" />                 <!--跑步开始时间(在规定时间内跑步)-->
+        <result property="endTime" column="end_time" />                     <!--跑步结束时间(在规定时间内跑步)-->
+        <result property="target" column="target" />                        <!--学期目标-->
+        <result property="isDefaultFlag" column="school_id" />              <!--默认规则标识-->
+        <result property="isUse" column="is_use" />                         <!--是否启用0=关闭，1=启用-->
+    </resultMap>
+
+
+	<select id="getRunningRuleBySchool" resultMap="runningRuleVo">
+		SELECT
+            running_rule_id as runningRuleId,
+            sport_count_max as sportCountMax,
+            `type` as type,
+            has_rail as hasRail,
+            speed_min as speedMin,
+            speed_max as speedMax,
+            valid_kiometer_min as validKiometerMin,
+            valid_kiometer_max as validKiometerMax,
+            start_time as startTime,
+            end_time as endTime,
+            target,
+            if(school_id=0, school_id, 1) as isDefaultFlag,
+            is_use as isUse
+        from running.t_run_rule t
+        where t.semester_id=#{semesterId}
+	</select>
+
+    <select id="getRuleIdBySchoolAndType" resultType="java.lang.Long">
+        SELECT running_rule_id as runningRuleId from running.t_run_rule t
+        where t.semester_id=#{semesterId}
+        and t.type=#{type}
+    </select>
+
+
+    <select id="getSchoolTargetBySemesterId" resultType="map">
+        SELECT t.type, convert(ifnull(t.target, 0), decimal(12,0)) as target from running.t_run_rule t where t.semester_id=#{semesterId}
+    </select>
+
+    <insert id="insertRunningRule" useGeneratedKeys="true" keyColumn="running_rule_id">
+        insert into running.t_run_rule(
+            school_id,
+            semester_id,
+            `type`,
+            sport_count_max,
+            get_score_type,
+            has_rail,
+            speed_min,
+            speed_max,
+            valid_kiometer_min,
+            valid_kiometer_max,
+            start_time,
+            end_time,
+            target,
+            create_time,
+            create_user,
+            is_use
+        ) values (
+            #{runningRule.schoolId},
+            #{runningRule.semesterId},
+            #{runningRule.type},
+            #{runningRule.sportCountMax},
+            #{runningRule.getScoreType},
+            #{runningRule.hasRail},
+            #{runningRule.speedMin},
+            #{runningRule.speedMax},
+            #{runningRule.validKiometerMin},
+            #{runningRule.validKiometerMax},
+            #{runningRule.startTime},
+            #{runningRule.endTime},
+            #{runningRule.target},
+            #{runningRule.createTime},
+            #{runningRule.createUser},
+            #{runningRule.isUse}
+        )
+    </insert>
+
+
+    <update id="updateRunningRule">
+        update running.t_run_rule t
+        <set>
+            school_id = #{runningRule.schoolId},
+            semester_id = #{runningRule.semesterId},
+            type = #{runningRule.type},
+            sport_count_max = #{runningRule.sportCountMax},
+            get_score_type = #{runningRule.getScoreType},
+            has_rail = #{runningRule.hasRail},
+            speed_min = #{runningRule.speedMin},
+            speed_max = #{runningRule.speedMax},
+            valid_kiometer_min = #{runningRule.validKiometerMin},
+            valid_kiometer_max = #{runningRule.validKiometerMax},
+            start_time = #{runningRule.startTime},
+            end_time = #{runningRule.endTime},
+            target = #{runningRule.target},
+            create_time = #{runningRule.createTime},
+            create_user = #{runningRule.createUser},
+            is_use = #{runningRule.isUse}
+        </set>
+        where running_rule_id = #{runningRule.runningRuleId}
+    </update>
+
+
+    <select id="getSportCountMaxByRunningType" resultType="java.lang.Integer">
+        SELECT t.sport_count_max from running.t_run_rule t
+        where t.semester_id=#{semesterId}
+        and t.type=#{type}
+    </select>
+
+</mapper>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--发现-动力圈-->
+<mapper namespace="com.peipao.qdl.discover.dao.DiscoverImgDao">
+	<resultMap type="com.peipao.qdl.discover.model.DiscoverReport" id="discoverReport">
+		<id property="reportId" column="report_id" /><!--主键ID-->
+		<result property="discoverId" column="discover_id" /><!--外键-动力圈表主键ID-->
+		<result property="dealState" column="deal_state" /><!--举报处理状态(0=待处理；1=已屏蔽动力圈信息；2=已审核无违规)-->
+		<result property="isClose" column="is_close" /><!--是否已经关闭本条举报(0=未关闭；1=已关闭)-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="updateTime" column="update_time" /><!--更新时间-->
+
+	</resultMap>
+
+</mapper>

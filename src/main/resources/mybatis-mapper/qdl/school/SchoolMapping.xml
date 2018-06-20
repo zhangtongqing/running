@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.school.dao.SchoolDao">
+
+	<resultMap type="com.peipao.qdl.school.model.School" id="school">
+		<id property="schoolId" column="school_id" />
+		<result property="name" column="name" />
+		<result property="mobile" column="mobile" />
+		<result property="contact" column="contact" />
+		<result property="contractTime" column="contract_time" />
+		<result property="city" column="city" />
+		<result property="code" column="code" />
+		<result property="logoURL" column="logo_url" />
+		<result property="isAuth" column="is_auth" />
+		<result property="isCon" column="is_con" />
+	</resultMap>
+
+	<resultMap type="com.peipao.qdl.school.model.Semester" id="semester">
+		<result property="semesterId" column="semester_id" />
+		<result property="schoolId" column="school_id" />
+		<result property="SemesterYear" column="semester_year" />
+		<result property="semesterType" column="semester_type" />
+		<result property="startTime" column="start_time" />
+		<result property="createTime" column="create_time" />
+	</resultMap>
+
+	<resultMap type="com.peipao.qdl.school.model.UserSchool" id="userSchool">
+		<result property="userId" column="user_id" />
+		<result property="userType" column="user_type" />
+		<result property="schoolId" column="school_id" />
+		<result property="semesterId" column="semester_id" />
+	</resultMap>
+
+	<resultMap type="com.peipao.qdl.school.model.Level" id="level">
+		<id property="levelId" column="level_id" />
+		<result property="schoolId" column="school_id" />
+		<result property="index" column="index" />
+		<result property="name" column="name" />
+		<result property="length" column="length" />
+	</resultMap>
+
+	<select id="querySchoolBySchoolCode" resultMap="school">
+		SELECT * FROM running.t_school WHERE code = #{schoolCode}
+	</select>
+
+	<select id="getSemesterBySchoolId" resultMap="semester">
+		<![CDATA[
+			SELECT * FROM running.t_semester WHERE school_id = #{schoolId} AND start_time <= now() ORDER BY start_time desc LIMIT 0,1
+		]]>
+	</select>
+
+	<select id="querySemesterById" resultMap="semester">
+		SELECT * FROM running.t_semester WHERE semester_id = #{semesterId}
+	</select>
+
+	<update id="updateSemester">
+		update running.t_semester
+		set start_time	=  #{startTime}
+		where school_id = #{schoolId} AND semester_year = #{semesterYear} AND semester_type = #{semesterType};
+	</update>
+
+	<select id="querySemesterTime" resultType="map">
+		SELECT date_format(start_time, "%Y-%c-%e") startTime, semester_year semesterYear, semester_type semesterType, semester_type `key` FROM running.t_semester
+		WHERE school_id = #{schoolId} AND semester_year = #{semesterYear}
+	</select>
+
+	<select id="querySemesterListBySchoolId" resultType="map">
+		SELECT semester_year semesterYear, start_time startTime, semester_type semesterType, semester_id semesterId FROM running.t_semester WHERE school_id = #{schoolId}
+	</select>
+
+	<select id="querySchoolList" resultType="map">
+		SELECT
+		  t1.school_id `key`,
+			t1.school_id schoolId,
+			t1.name,
+			t1.code,
+			t1.city,
+			t1.contact,
+			date_format(
+				t1.contract_time,
+				'%Y-%m-%d'
+			) contractTime,
+			t1.mobile,
+			count(t2.user_id) AS usernum,
+			t1.is_auth isAuth,
+			t1.is_con isCon
+		from t_school t1 LEFT JOIN t_user t2
+		on t1.school_id = t2.school_id
+		and t2. STATUS = 1
+		AND t2.user_type = 1
+		where 1=1
+		<if test="city != null and city != ''">
+			and t1.city LIKE concat(concat('%', #{city}),'%')
+		</if>
+		<if test="name != null and name != ''">
+			and t1.`name` LIKE concat(concat('%', #{name}),'%')
+		</if>
+		<if test="isCon != null ">
+			and t1.is_con = #{isCon}
+		</if>
+		GROUP BY t1.school_id
+		ORDER BY usernum desc
+		LIMIT #{from},#{num}
+	</select>
+
+	<select id="querySchoolListCount" resultType="java.lang.Long">
+		SELECT count(*) from
+		(
+		SELECT
+		  t1.school_id `key`,
+			t1.school_id schoolId,
+            t1.name,
+            t1.code,
+			t1.city,
+			t1.contact,
+			date_format(
+				t1.contract_time,
+				'%Y-%m-%d'
+			) contractTime,
+			t1.mobile,
+			count(t2.user_id) AS usernum,
+			t1.is_auth isAuth,
+			t1.is_con isCon
+		from t_school t1 LEFT JOIN t_user t2
+		on t1.school_id = t2.school_id
+		and t2. STATUS = 1
+		AND t2.user_type = 1
+		where 1=1
+		<if test="city != null and city != ''">
+			and t1.city LIKE concat(concat('%', #{city}),'%')
+		</if>
+		<if test="name != null and name != ''">
+			and t1.`name` LIKE concat(concat('%', #{name}),'%')
+		</if>
+		<if test="isCon != null ">
+			and t1.is_con = #{isCon}
+		</if>
+		GROUP BY t1.school_id
+		ORDER BY usernum desc
+		) t
+
+	</select>
+
+	<update id="updateSchool">
+		UPDATE running.t_school
+		SET is_auth = #{isAuth},is_con = #{isCon},mobile = #{mobile},contact = #{contact},
+		<if test="contractTime != null">
+			contract_time = #{contractTime},
+		</if>
+		logo_url = #{logoURL}
+		WHERE school_id = #{schoolId}
+	</update>
+
+	<select id="querySchoolById" resultMap="school">
+		SELECT * FROM running.t_school WHERE school_id =#{schoolId}
+	</select>
+
+	<insert id="insertSemesters">
+		<foreach collection="semesters" index="index" item ="item" separator=";">
+			insert into running.t_semester (school_id, semester_year, semester_type, start_time, end_time, create_time)
+			values
+			(#{schoolId}, #{semester_year}, #{semester_type}, #{start_time}, #{end_time}, #{create_time});
+
+		</foreach>
+	</insert>
+
+	<select id="getSchoolList" resultMap="school">
+		select * from running.t_school;
+	</select>
+
+	<select id="getSemesterList" resultMap="semester">
+		select *
+		from running.t_semester WHERE school_id = #{schoolId};
+	</select>
+
+	<select id="getSemesterYearList" resultType="java.lang.String">
+		select DISTINCT(semester_year)
+		from running.t_semester
+		WHERE school_id = #{schoolId};
+	</select>
+</mapper>

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.peipao.qdl.compensate.dao.CompensateMainDao">
+
+	<resultMap type="com.peipao.qdl.compensate.model.CompensateMain" id="compensateMain">
+		<id property="compensateId" column="compensate_id" />
+		<result property="semesterId" column="semester_id" />
+		<result property="userId" column="user_id" />
+		<result property="compensateScore" column="compensate_score" />
+		<result property="morningRunningCount" column="morning_running_count" />
+		<result property="runningLength" column="running_length" />
+		<result property="updateTime" column="update_time" />
+		<result property="updateUserId" column="update_user_id" />
+	</resultMap>
+
+	<insert id="insertCompensateMain" useGeneratedKeys="true" keyProperty="compensateMain.compensateId" parameterType="map">
+		insert into running.t_compensate_main(
+			semester_id, user_id,
+			<if test="compensateScore != null" >
+				compensate_score,
+			</if>
+			<if test="runningCount != null and runningCount != 0" >
+				morning_running_count,
+			</if>
+			<if test="runningLength != null and runningLength != 0" >
+				running_length,
+			</if>
+			update_time, update_user_id
+		) values (
+			#{semesterId}, #{userId},
+			<if test="compensateScore != null" >
+				#{compensateScore},
+			</if>
+			<if test="runningCount != null and runningCount != 0" >
+				#{runningCount},
+			</if>
+			<if test="runningLength != null and runningLength != 0" >
+				#{runningLength},
+			</if>
+			#{updateTime}, #{updateUserId}
+		);
+	</insert>
+
+	<select id="getCompensateMainInfoForStudent" resultType="map">
+		SELECT
+			compensate_score as compensateScore,
+			morning_running_count as morningRunningCount,
+			running_length as runningLength
+		FROM running.t_compensate_main
+		WHERE user_id = #{studentId}
+		AND  semester_id = #{semesterId}
+		LIMIT 1
+	</select>
+
+	<select id="getCompensateMainByUser" resultMap="compensateMain">
+		SELECT * FROM running.t_compensate_main
+		WHERE user_id = #{userId}
+		AND  semester_id = #{semesterId}
+		LIMIT 1
+	</select>
+
+
+	<update id="updateCompensateMainForRecord">
+		update running.t_compensate_main
+			<set>
+				<if test="runningCount != null and runningCount != 0">
+					morning_running_count = morning_running_count + #{runningCount},
+				</if>
+				<if test="runningLength != null and runningLength != 0" >
+					running_length = running_length + #{runningLength},
+				</if>
+				<if test="compensateScore != null and compensateScore != 0" >
+					compensate_score = compensate_score + #{compensateScore},
+				</if>
+				update_time = #{updateTime},
+				update_user_id = #{updateUserId},
+			</set>
+		where compensate_id = #{compensateId}
+	</update>
+
+</mapper>

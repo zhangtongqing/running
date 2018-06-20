@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--动力圈评论表-->
+<mapper namespace="com.peipao.qdl.discover.dao.DiscoverCommentDao">
+	<resultMap type="com.peipao.qdl.discover.model.DiscoverComment" id="discoverComment">
+		<id property="commentId" column="comment_id" /><!--主键ID-->
+		<result property="discoverId" column="discover_id" /><!--外键-动力圈主键ID-->
+		<result property="userId" column="user_id" /><!--评论用户ID-->
+		<result property="commentContent" column="comment_content" /><!--评论内容-->
+		<result property="createTime" column="create_time" /><!--创建时间-->
+		<result property="logicDelete" column="logic_delete" /><!--逻辑删除，默认0=未删除.有效， 1=已删除.无效-->
+	</resultMap>
+
+	<!--3.7 插入一条动力圈评论-->
+	<insert id="insertDiscoverComment" useGeneratedKeys="true" keyProperty="discoverComment.commentId" parameterType="com.peipao.qdl.discover.model.DiscoverComment">
+		insert into running.t_discover_comment(
+			discover_id,user_id,comment_content,create_time,logic_delete
+		)
+		values (
+            #{discoverId},
+            #{userId},
+            #{commentContent},
+            #{createTime},
+            #{logicDelete}
+		);
+	</insert>
+
+    <!-- 查询某条动力圈的 -->
+	<select id="getCommentListByDiscoverId" resultType="map">
+        SELECT
+            t.comment_id as commentId,
+			<if test="userId != null">
+				if(t.user_id = ${userId} , ${trueVal}, ${falseVal}) as delPower,
+			</if>
+			t.user_id as userId,
+			t.comment_content as commentContent
+        FROM running.t_discover_comment t
+        WHERE t.discover_id=#{discoverId}
+        AND t.logic_delete=#{logicDelete}
+        ORDER BY t.comment_id DESC
+	</select>
+
+    <select id="getDiscoverCommentById" resultMap="discoverComment">
+        SELECT * FROM running.t_discover_comment t WHERE t.comment_id=#{commentId}
+
+    </select>
+
+	<!-- 逻辑删除一条评论信息 -->
+	<update id="updateForCommentDelete" parameterType="java.lang.Long">
+		update running.t_discover_comment
+        set logic_delete = 1
+		where comment_id = #{commentId}
+        and logic_delete = 0
+        <if test="userId != null">
+            and user_id = #{userId}
+        </if>
+	</update>
+
+</mapper>
